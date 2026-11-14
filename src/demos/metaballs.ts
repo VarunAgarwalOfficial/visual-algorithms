@@ -33,12 +33,16 @@ function mount(root: HTMLElement): () => void {
   const theme = watchPalette(() => draw());
   const stage = createStage(canvas, (previousWidth, previousHeight) => {
     if (previousWidth > 0 && previousHeight > 0) {
-      // Keep the balls where they were, proportionally.
+      // Keep the scene the same, proportionally: positions, speeds and sizes.
       const sx = stage.width / previousWidth;
       const sy = stage.height / previousHeight;
+      const size = Math.min(stage.width, stage.height) / Math.min(previousWidth, previousHeight);
       for (const b of balls) {
         b.x *= sx;
         b.y *= sy;
+        b.vx *= sx;
+        b.vy *= sy;
+        b.radius *= size;
       }
       stepBalls(balls, 0, stage.width, stage.height);
     }
