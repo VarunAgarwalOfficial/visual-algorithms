@@ -136,6 +136,7 @@ export function tracePlayer(options: TraceOptions): TracePlayer {
     label: 'Speed',
     min: 0,
     max: 100,
+    step: 0.5,
     value: toSlider(speed),
     format: (v) => `${round(toSpeed(v))} steps/s`,
     onInput(value) {
@@ -312,6 +313,7 @@ export function simPlayer<S>(options: SimOptions<S>): SimPlayer {
     label: 'Speed',
     min: 0,
     max: 100,
+    step: 0.5,
     value: toSlider(speed),
     format: (v) => `${round(toSpeed(v))}×`,
     onInput(value) {
