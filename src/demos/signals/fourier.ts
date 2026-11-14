@@ -10,6 +10,7 @@ import { watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, prose, type Mount } from '../layout';
 import { sampleSvg } from './svg';
+import { FONT } from '../../ui/font';
 
 /** Samples taken along the outline. The DFT is O(N²), so this stays modest. */
 const SAMPLES = 512;
@@ -145,7 +146,7 @@ export const mount: Mount = (root, entry) => {
     const { palette } = theme;
     if (stroke.length === 0) {
       ctx.fillStyle = palette.muted;
-      ctx.font = '15px system-ui, sans-serif';
+      ctx.font = `15px ${FONT}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('Draw one continuous line. It closes when you let go.', width / 2, height / 2);
@@ -355,6 +356,9 @@ export const mount: Mount = (root, entry) => {
     ),
     prose(
       'Circles are added largest first, so a handful already gives the rough shape and the rest sharpen the corners.',
+    ),
+    prose(
+      'Load SVG traces the paths and basic shapes in a file and joins them into one line for a single pen. Text, images, clipping and styles set in a style sheet are ignored, so a shape hidden by a class will still be drawn.',
     ),
   );
 
