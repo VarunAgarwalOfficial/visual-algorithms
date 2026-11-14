@@ -50,7 +50,36 @@ export function buildLayout(root: HTMLElement, entry: DemoEntry, canvasLabel: st
     el('p', { class: 'lede', text: entry.summary }),
     el('div', { class: 'demo' }, el('div', { class: 'view' }, stage, readout), panel, about),
   );
+  keepPlaybackNearCanvas(panel);
   return { canvas, stage, readout, panel, about };
+}
+
+const NARROW = window.matchMedia('(max-width: 40rem)');
+
+/**
+ * On a phone the panel sits under the picture, so Play and Step go first in it
+ * rather than below every other setting. The fieldset is moved in the document,
+ * not just on screen, so the tab order matches what is seen.
+ */
+function keepPlaybackNearCanvas(panel: HTMLElement): void {
+  let home: ChildNode | null = null;
+  const place = () => {
+    if (!panel.isConnected) {
+      NARROW.removeEventListener('change', place);
+      return;
+    }
+    const playback = panel.querySelector(':scope > .playback');
+    if (!playback) return;
+    if (NARROW.matches && panel.firstElementChild !== playback) {
+      home = playback.nextSibling;
+      panel.prepend(playback);
+    } else if (!NARROW.matches && panel.firstElementChild === playback) {
+      panel.insertBefore(playback, home);
+    }
+  };
+  NARROW.addEventListener('change', place);
+  // The demo fills the panel right after this returns.
+  queueMicrotask(place);
 }
 
 /** Builds a paragraph from text with `code` spans marked by backticks. */

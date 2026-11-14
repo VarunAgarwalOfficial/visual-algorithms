@@ -173,15 +173,6 @@ h3 {
   top: var(--space-2);
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 /* Controls */
 
 select,
@@ -1061,14 +1052,6 @@ output {
 
   .card-text {
     padding: var(--space-3);
-  }
-
-  /* Play and Step sit straight under the picture instead of below every other setting. */
-  .panel fieldset.playback {
-    order: -1;
-    padding: 0 0 var(--space-4);
-    border-top: 0;
-    border-bottom: 1px solid var(--border);
   }
 
   input[type='range'] {

@@ -24,11 +24,6 @@ export type Label = (node: number) => string;
 /** A, B, ... Z, then a, b, ... */
 export const letter: Label = (i) => String.fromCharCode(i < 26 ? 65 + i : 97 + ((i - 26) % 26));
 
-export const cloneGraph = (graph: Graph): Graph => ({
-  nodes: graph.nodes.map((p) => ({ ...p })),
-  edges: graph.edges.map((e) => ({ ...e })),
-});
-
 export function findEdge(graph: Graph, a: number, b: number, directed: boolean): number {
   return graph.edges.findIndex(
     (e) => (e.a === a && e.b === b) || (!directed && e.a === b && e.b === a),

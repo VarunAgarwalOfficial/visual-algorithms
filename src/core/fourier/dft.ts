@@ -30,26 +30,6 @@ export function dft(samples: readonly Point[]): Point[] {
   return out;
 }
 
-/** Inverse of {@link dft}: z_n = sum_k c_k * e^(2*pi*i*k*n/N). */
-export function idft(coefficients: readonly Point[]): Point[] {
-  const n = coefficients.length;
-  const out: Point[] = [];
-  for (let j = 0; j < n; j++) {
-    let re = 0;
-    let im = 0;
-    for (let k = 0; k < n; k++) {
-      const angle = (TAU * ((k * j) % n)) / n;
-      const c = Math.cos(angle);
-      const s = Math.sin(angle);
-      const z = coefficients[k];
-      re += z.x * c - z.y * s;
-      im += z.x * s + z.y * c;
-    }
-    out.push({ x: re, y: im });
-  }
-  return out;
-}
-
 /**
  * Bin k and bin k - N are the same frequency at the sample points, but not
  * between them. Mapping the upper half to negative frequencies picks the
