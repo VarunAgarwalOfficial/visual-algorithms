@@ -1,11 +1,11 @@
 import { mix, type Palette } from '../../ui/theme';
+import { FONT, MONO } from '../../ui/font';
 
 /** Shared drawing for the dynamic-programming tables in this section. */
 
 export type Cell = readonly [number, number];
 
-export const FONT = 'system-ui, sans-serif';
-export const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+export { FONT, MONO } from '../../ui/font';
 
 /** Keeps single-unit printable characters and cuts to `max`. Used on typed and URL input alike. */
 export function clean(text: string, max: number): string {

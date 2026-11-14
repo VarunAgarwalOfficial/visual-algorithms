@@ -1,6 +1,7 @@
 import type { TreeLayout } from '../../core/structures/layout';
 import type { Role } from '../../core/structures/trace';
 import { hexToRgb, mix, type Palette } from '../../ui/theme';
+import { FONT } from '../../ui/font';
 
 export interface Point {
   x: number;
@@ -28,7 +29,7 @@ export interface Box {
 }
 
 export const font = (px: number, bold = false) =>
-  `${bold ? '600 ' : ''}${Math.round(px * 10) / 10}px system-ui, sans-serif`;
+  `${bold ? '600 ' : ''}${Math.round(px * 10) / 10}px ${FONT}`;
 
 export function roleColour(palette: Palette, role: Role | undefined): string | undefined {
   if (role === 'compare') return palette.compare;

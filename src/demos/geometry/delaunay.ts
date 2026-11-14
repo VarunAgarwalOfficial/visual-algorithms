@@ -13,6 +13,7 @@ import { watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { dot, dotRadius, labelPoints, pointEditor, worldView } from './points';
+import { drawHint } from '../../ui/font';
 
 export const mount: Mount = (root, entry) => {
   const { canvas, readout, panel, about } = buildLayout(
@@ -76,6 +77,9 @@ export const mount: Mount = (root, entry) => {
     const px = (i: number) => view.x(points[i].x);
     const py = (i: number) => view.y(points[i].y);
     ctx.clearRect(0, 0, width, height);
+    if (points.length === 0) {
+      drawHint(ctx, width, height, palette.muted, 'Click here to add points, or press Randomise.');
+    }
     ctx.lineJoin = 'round';
 
     const triangle = (t: readonly number[]) => {

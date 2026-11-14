@@ -5,6 +5,7 @@ import { select } from '../../ui/dom';
 import { formula, prose, type Mount } from '../layout';
 import { drawGraph, tint } from './graphview';
 import { graphLab } from './lab';
+import { FONT } from '../../ui/font';
 
 const ALGORITHMS = [
   { id: 'kruskal', name: "Kruskal's algorithm" },
@@ -173,7 +174,7 @@ export const mount: Mount = (root, entry) => {
       const strip =
         lab.settings.alg === 'prim' ? 'Edges by weight' : 'Edges by weight, taken left to right';
       const top = height - Math.max(34, Math.min(56, height * 0.14));
-      ctx.font = '11px system-ui, sans-serif';
+      ctx.font = `11px ${FONT}`;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
       ctx.fillStyle = palette.muted;

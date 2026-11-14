@@ -7,6 +7,7 @@ import { mix, prefersReducedMotion, watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { clean, FONT, glyph, MONO } from './table';
+import { drawHint } from '../../ui/font';
 
 const MAX_TEXT = 60;
 const MAX_SYMBOLS = 12;
@@ -235,7 +236,10 @@ export const mount: Mount = (root, entry) => {
     const { ctx, width, height } = stage;
     const { palette } = theme;
     ctx.clearRect(0, 0, width, height);
-    if (h.symbols.length === 0) return;
+    if (h.symbols.length === 0) {
+      drawHint(ctx, width, height, palette.muted, 'Type some text to encode.');
+      return;
+    }
     const k = mergesDone();
     const queue = h.queues[k];
     const finished = done();

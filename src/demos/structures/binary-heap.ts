@@ -103,9 +103,9 @@ export const mount: Mount = (root, entry) => {
     const levels = Math.floor(Math.log2(n)) + 1;
     const treeHeight = stripTop - pad - 16;
     const slot = (width - 2 * pad) / 2 ** (levels - 1);
-    const r = Math.max(6, Math.min(16, slot * 0.44, treeHeight / (levels * 2.6)));
+    const r = Math.max(6, Math.min(20, slot * 0.44, treeHeight / (levels * 2.6)));
     const gap = levels > 1 ? Math.min(84, (treeHeight - 2 * r) / (levels - 1)) : 0;
-    const px = Math.max(8, Math.min(13, r * 0.95));
+    const px = Math.max(8, Math.min(14, r * 0.95));
     const treeTop = pad + Math.min(treeHeight * 0.2, (treeHeight - 2 * r - gap * (levels - 1)) / 2);
     const spot = (i: number) => {
       const depth = Math.floor(Math.log2(i + 1));

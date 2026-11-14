@@ -16,6 +16,7 @@ import { watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { clampInt, dot, dotRadius, pointEditor, worldView } from './points';
+import { drawHint } from '../../ui/font';
 
 const MODES = [
   { id: 'build', name: 'Build: insert the points' },
@@ -188,6 +189,9 @@ export const mount: Mount = (root, entry) => {
     const view = worldView(stage);
     const points = editor.points;
     ctx.clearRect(0, 0, width, height);
+    if (points.length === 0) {
+      drawHint(ctx, width, height, palette.muted, 'Click here to add points, or press Randomise.');
+    }
     const cell = (node: Rect) =>
       [view.x(node.x), view.y(node.y), node.w * view.scale, node.h * view.scale] as const;
     const walk = (node: QuadNode, visit: (node: QuadNode) => void) => {

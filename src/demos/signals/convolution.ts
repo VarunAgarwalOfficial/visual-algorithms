@@ -8,6 +8,7 @@ import { onDrag } from '../../ui/pointer';
 import { watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
+import { FONT } from '../../ui/font';
 
 const N = 32; // samples in the 1D signal
 const SIZE = 16; // the image is SIZE × SIZE
@@ -262,7 +263,7 @@ export const mount: Mount = (root, entry) => {
     const barWidth = Math.max(1, g.slot * 0.72);
     const inset = (g.slot - barWidth) / 2;
 
-    ctx.font = '12px system-ui, sans-serif';
+    ctx.font = `12px ${FONT}`;
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
     const labels = [
@@ -354,7 +355,7 @@ export const mount: Mount = (root, entry) => {
     const cy = Math.floor(last / SIZE);
     const edge = (i: number) => Math.round(i * g.cell);
 
-    ctx.font = '12px system-ui, sans-serif';
+    ctx.font = `12px ${FONT}`;
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
     ctx.fillStyle = palette.muted;
@@ -392,7 +393,7 @@ export const mount: Mount = (root, entry) => {
     ctx.clip();
     if (g.cell >= 22) {
       // Flipped kernel weights over the pixels they multiply.
-      ctx.font = `${Math.min(12, Math.floor(g.cell * 0.42))}px system-ui, sans-serif`;
+      ctx.font = `${Math.min(12, Math.floor(g.cell * 0.42))}px ${FONT}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       for (let j = -1; j <= 1; j++) {

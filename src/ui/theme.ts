@@ -107,8 +107,11 @@ export function watchPalette(onChange: () => void): { palette: Palette; dispose(
     dispose: () => {
       scheme.removeEventListener('change', listener);
       window.removeEventListener(CHANGE_EVENT, listener);
+      document.fonts.removeEventListener('loadingdone', onChange);
     },
   };
+  // A canvas keeps the fallback font it was drawn with; draw again when the bundled one arrives.
+  document.fonts.addEventListener('loadingdone', onChange);
   scheme.addEventListener('change', listener);
   window.addEventListener(CHANGE_EVENT, listener);
   return holder;

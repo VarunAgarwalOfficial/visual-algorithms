@@ -7,6 +7,7 @@ import { watchPalette, type Palette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { clean, drawLetters, drawTable, FONT, glyph, phases, type Cell } from './table';
+import { MONO } from '../../ui/font';
 
 const MAX = 10;
 const PRESETS = [
@@ -237,7 +238,7 @@ export const mount: Mount = (root, entry) => {
       const op = ops[k];
       const colour = opColour(palette, op.kind);
       const cx = x0 + slot * (k + 0.5);
-      ctx.font = `${size}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+      ctx.font = `${size}px ${MONO}`;
       ctx.fillStyle = op.from ? (op.kind === 'match' ? palette.ink : colour) : palette.muted;
       ctx.fillText(op.from ? glyph(op.from) : '–', cx, yA);
       ctx.fillStyle = op.to ? (op.kind === 'match' ? palette.ink : colour) : palette.muted;

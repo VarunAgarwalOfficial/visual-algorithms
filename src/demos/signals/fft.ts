@@ -8,6 +8,7 @@ import { onDrag } from '../../ui/pointer';
 import { watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
+import { FONT } from '../../ui/font';
 
 /** A drawn signal is stored at this resolution and resampled to N. */
 const DRAWN = 128;
@@ -261,7 +262,7 @@ export const mount: Mount = (root, entry) => {
     const n = settings.n;
     const position = player.position;
 
-    ctx.font = '12px system-ui, sans-serif';
+    ctx.font = `12px ${FONT}`;
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
     ctx.fillStyle = palette.muted;
@@ -366,7 +367,7 @@ export const mount: Mount = (root, entry) => {
     const nodeX = (c: number) => left + c * columnWidth + (numbers ? radius + 6 : columnWidth / 2);
     const nodeY = (r: number) => top + (r + 0.5) * rowHeight;
 
-    ctx.font = '12px system-ui, sans-serif';
+    ctx.font = `12px ${FONT}`;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'right';
     ctx.fillStyle = palette.muted;

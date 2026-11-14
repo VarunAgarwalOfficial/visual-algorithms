@@ -13,6 +13,7 @@ import { tracePlayer } from '../../ui/player';
 import { prefersReducedMotion, watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
+import { FONT } from '../../ui/font';
 
 interface Preset {
   id: string;
@@ -219,7 +220,7 @@ export const mount: Mount = (root, entry) => {
     ctx.clearRect(0, 0, width, height);
     if (path.count === 0) {
       ctx.fillStyle = palette.muted;
-      ctx.font = '12px system-ui, sans-serif';
+      ctx.font = `12px ${FONT}`;
       ctx.textAlign = 'center';
       ctx.fillText('Nothing to draw: the string has no F or G.', width / 2, height / 2);
       return;

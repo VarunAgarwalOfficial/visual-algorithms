@@ -13,6 +13,7 @@ import { mix, watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { clean, FONT, glyph, MONO } from './table';
+import { drawHint } from '../../ui/font';
 
 const MAX_TEXT = 28;
 const MAX_PATTERN = 8;
@@ -129,6 +130,9 @@ export const mount: Mount = (root, entry) => {
     const { palette } = theme;
     const { text, pat } = settings;
     ctx.clearRect(0, 0, width, height);
+    if (text.length === 0 && pat.length === 0) {
+      drawHint(ctx, width, height, palette.muted, 'Type a text and a pattern to search for.');
+    }
     const step: MatchStep | undefined = trace.steps[position - 1];
     const building = step ? step.phase === 'build' : trace.steps[0]?.phase === 'build';
     const top = building ? pat : text;

@@ -14,6 +14,7 @@ import { hexToRgb, isDark, prefersReducedMotion, watchPalette } from '../../ui/t
 import { hashParams, urlState } from '../../ui/url';
 import { buildLayout, formula, prose, stats, type Mount } from '../layout';
 import type { BandRequest, BandResult } from './mandelbrot.worker';
+import { FONT } from '../../ui/font';
 
 /** Height of the plane shown at zoom 1. */
 const SPAN = 2.7;
@@ -471,7 +472,7 @@ export const mount: Mount = (root, entry) => {
       ctx.strokeStyle = palette.ink;
       ctx.lineWidth = 1;
       ctx.strokeRect(box.x - 1.5, box.y - 1.5, box.w + 3, box.h + 3);
-      ctx.font = '12px system-ui, sans-serif';
+      ctx.font = `12px ${FONT}`;
       ctx.textBaseline = 'top';
       ctx.textAlign = 'left';
       const label = 'Julia set';

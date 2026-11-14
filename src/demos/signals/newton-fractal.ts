@@ -14,6 +14,7 @@ import { onDrag } from '../../ui/pointer';
 import { hexToRgb, watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
+import { FONT } from '../../ui/font';
 
 /** Height of the visible part of the plane; the centre is the origin. */
 const SPAN = 3.4;
@@ -265,7 +266,7 @@ export const mount: Mount = (root, entry) => {
       });
     }
 
-    ctx.font = '12px system-ui, sans-serif';
+    ctx.font = `12px ${FONT}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     roots.forEach((r, i) => {

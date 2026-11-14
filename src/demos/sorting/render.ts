@@ -1,5 +1,6 @@
 import type { Playback } from '../../core/sorting/trace';
 import { isDark, mix, type Palette } from '../../ui/theme';
+import { FONT as FAMILY } from '../../ui/font';
 
 export type ViewMode = 'bars' | 'dots' | 'wheel';
 
@@ -16,8 +17,8 @@ export interface Rect {
   h: number;
 }
 
-export const FONT = '12px system-ui, sans-serif';
-export const SMALL_FONT = '11px system-ui, sans-serif';
+export const FONT = `12px ${FAMILY}`;
+export const SMALL_FONT = `11px ${FAMILY}`;
 
 /** Series colours used to tint ranges: the ones that are not also the highlight colours. */
 const RANGE_SERIES = [0, 2, 4, 5];

@@ -105,9 +105,9 @@ export const mount: Mount = (root, entry) => {
       60,
       72,
     );
-    const squeeze = layout.depth > 1 ? fit.levelGap * 0.5 : 17;
-    const r = Math.max(3.5, Math.min(17, fit.unit * 0.46 > 6.5 ? fit.unit * 0.46 : 6.5, squeeze));
-    const px = Math.max(7.5, Math.min(13, r * 0.95));
+    const squeeze = layout.depth > 1 ? fit.levelGap * 0.5 : 20;
+    const r = Math.max(3.5, Math.min(20, fit.unit * 0.46 > 6.5 ? fit.unit * 0.46 : 6.5, squeeze));
+    const px = Math.max(7.5, Math.min(14, r * 0.95));
     const at = new Map<number, { x: number; y: number }>();
     const visit = (node: TreeSnap | null, each: (node: TreeSnap) => void) => {
       if (!node) return;

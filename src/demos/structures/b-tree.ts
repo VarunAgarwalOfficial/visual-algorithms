@@ -86,12 +86,12 @@ export const mount: Mount = (root, entry) => {
     const fit = fitTree(
       layout,
       { x: pad, y: pad, w: width - 2 * pad, h: height - 2 * pad },
-      38,
+      46,
       90,
     );
     const cell = fit.unit;
-    const h = Math.max(14, Math.min(28, cell * 0.9));
-    const px = Math.max(7.5, Math.min(13, cell * 0.5));
+    const h = Math.max(14, Math.min(32, cell * 0.9));
+    const px = Math.max(7.5, Math.min(14, cell * 0.5));
     const at = new Map<number, Point>();
     const visit = (node: BTreeSnap, each: (node: BTreeSnap) => void) => {
       each(node);

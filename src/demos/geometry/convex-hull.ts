@@ -11,6 +11,7 @@ import { watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { dot, dotRadius, labelPoints, pointEditor, worldView } from './points';
+import { drawHint } from '../../ui/font';
 
 const NOTES: Record<HullAlgorithm, string> = {
   graham:
@@ -77,6 +78,9 @@ export const mount: Mount = (root, entry) => {
     const points = editor.points;
     const at = (i: number) => [view.x(points[i].x), view.y(points[i].y)] as const;
     ctx.clearRect(0, 0, width, height);
+    if (points.length === 0) {
+      drawHint(ctx, width, height, palette.muted, 'Click here to add points, or press Randomise.');
+    }
     ctx.lineJoin = 'round';
 
     const path = (indices: readonly number[], close: boolean) => {

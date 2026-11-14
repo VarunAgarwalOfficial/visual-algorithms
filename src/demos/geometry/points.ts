@@ -15,6 +15,7 @@ import { newSeed, seeded } from '../../core/random';
 import type { Stage } from '../../ui/canvas';
 import { button, checkbox, el, fieldset, select, slider } from '../../ui/dom';
 import { onDrag, type DragHandlers } from '../../ui/pointer';
+import { FONT } from '../../ui/font';
 
 /** Maps the 4:3 lattice world onto the canvas with one scale, centred. */
 export interface View {
@@ -73,7 +74,7 @@ export function labelPoints(
   prefix = '',
 ): void {
   if (points.length > limit) return;
-  ctx.font = '10px system-ui, sans-serif';
+  ctx.font = `11px ${FONT}`;
   ctx.fillStyle = colour;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'bottom';
