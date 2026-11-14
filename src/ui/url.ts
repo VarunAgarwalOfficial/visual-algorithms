@@ -26,12 +26,14 @@ export function hashParams(): URLSearchParams {
 }
 
 /**
- * True when the link did not set `key` and the screen is phone-sized: the demo
- * may then start from a smaller default. The value differs from the usual
- * default, so it is written into the link and other screens show the same.
+ * True on a phone-sized screen when the link carries no settings at all: the
+ * demo may then start from a smaller default. A link with any setting is left
+ * alone, since painted cells and positions depend on the others. The smaller
+ * value differs from the usual default, so it is written into the link and
+ * other screens then show the same.
  */
-export function phoneDefault(key: string): boolean {
-  return !hashParams().has(key) && window.matchMedia('(max-width: 40rem)').matches;
+export function phoneDefault(): boolean {
+  return hashParams().size === 0 && window.matchMedia('(max-width: 40rem)').matches;
 }
 
 /** The demo id in the hash, without the parameters. */

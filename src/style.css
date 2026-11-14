@@ -134,8 +134,9 @@ body {
 }
 
 main {
-  /* Fills the window so the footer does not jump while a demo loads. */
+  /* At least a window tall, so the footer starts below the fold and does not jump while a demo loads. */
   flex: 1 0 auto;
+  min-height: 100vh;
 }
 
 main:focus {

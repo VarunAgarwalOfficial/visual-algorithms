@@ -417,7 +417,7 @@ export const mount: Mount = (root, entry) => {
       ['var(--canvas-good)', 'Known to match'],
       ['var(--canvas-change)', 'Mismatch / value written'],
       ['var(--canvas-compare)', 'Letters compared / value read'],
-      ['var(--canvas-accent)', 'Match found'],
+      ['var(--canvas-accent)', 'Underline: a whole match'],
       ['var(--canvas-series-5)', 'Z-box'],
     ]),
   );

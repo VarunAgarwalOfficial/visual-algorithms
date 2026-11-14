@@ -27,8 +27,12 @@ export function createStage(
     const width = Math.max(1, Math.round(canvas.clientWidth));
     const height = Math.max(1, Math.round(canvas.clientHeight));
     const ratio = window.devicePixelRatio || 1;
-    const pixelWidth = Math.max(1, exact?.inlineSize ?? Math.round(width * ratio));
-    const pixelHeight = Math.max(1, exact?.blockSize ?? Math.round(height * ratio));
+    // The exact box is only a refinement of size times ratio. If the two disagree by more
+    // than rounding (some emulated screens report the box unscaled), the ratio wins.
+    const near = (reported: number | undefined, expected: number) =>
+      reported !== undefined && Math.abs(reported - expected) < 2 ? reported : Math.round(expected);
+    const pixelWidth = Math.max(1, near(exact?.inlineSize, canvas.clientWidth * ratio));
+    const pixelHeight = Math.max(1, near(exact?.blockSize, canvas.clientHeight * ratio));
     if (canvas.width === pixelWidth && canvas.height === pixelHeight && stage.width === width) {
       return;
     }

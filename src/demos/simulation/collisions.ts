@@ -58,7 +58,7 @@ export const mount: Mount = (root, entry) => {
   });
   const settings = url.state;
   // On a small canvas the histogram would cover a third of the box.
-  if (phoneDefault('hist')) settings.hist = false;
+  if (phoneDefault()) settings.hist = false;
   settings.n = clampInt(settings.n, 2, 2000);
   settings.radius = clamp(settings.radius, 2, 30);
   settings.speed = clampInt(settings.speed, 0, 400);

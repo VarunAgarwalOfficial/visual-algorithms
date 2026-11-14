@@ -78,7 +78,7 @@ export const mount: Mount = (root, entry) => {
   });
   const settings = url.state;
   // Cells a finger can hit.
-  if (phoneDefault('cols')) settings.cols = 19;
+  if (phoneDefault()) settings.cols = 19;
   settings.cols = odd(Math.max(MIN_COLS, Math.min(MAX_COLS, Math.round(settings.cols))));
   const info = () => GRID_ALGORITHMS.find((a) => a.id === settings.alg) ?? GRID_ALGORITHMS[0];
   const heuristic = (): Heuristic => (settings.h === 'octile' ? 'octile' : 'manhattan');

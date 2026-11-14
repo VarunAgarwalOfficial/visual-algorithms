@@ -6,7 +6,6 @@
     <meta name="color-scheme" content="light dark" />
     <meta name="robots" content="noindex" />
     <title>Not found · Visual algorithms</title>
-    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <style>
       body {
         max-width: 36rem;
@@ -34,11 +33,13 @@
   <body>
     <h1>Page not found</h1>
     <p>There is nothing at this address. The demos all live on one page.</p>
-    <p><a id="home" href="./">Go to Visual algorithms</a></p>
+    <p><a id="home" href="/">Go to Visual algorithms</a></p>
     <script>
-      // Served for any missing path, however deep; point the link at the folder this file is in.
-      const here = document.currentScript;
-      document.getElementById('home').href = new URL('./', here.baseURI).href;
+      // This page is served for any missing path, however deep, so a relative link would
+      // be wrong. On a github.io project site the first path segment is the site's folder.
+      const folder = window.location.pathname.split('/')[1];
+      const project = window.location.hostname.endsWith('.github.io') && folder;
+      document.getElementById('home').href = project ? `/${folder}/` : '/';
     </script>
   </body>
 </html>

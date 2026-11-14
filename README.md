@@ -188,8 +188,8 @@ the system light or dark scheme unless overridden. With
 `prefers-reduced-motion`, the animated demos start paused on a complete frame
 and can be advanced with Step or Play. Drawing and dragging on a canvas need a
 pointer; presets, typed input and Randomise do not. The layout works down to
-phone width, where controls are 44 px tall and the playback buttons sit directly
-under the canvas. Text and control borders meet WCAG AA contrast in both themes,
+phone width, where controls are 44 px tall and the playback buttons come first
+in the panel, under the canvas and its counters. Text and control borders meet WCAG AA contrast in both themes,
 and every focusable element shows a focus ring.
 
 ## Deploying
