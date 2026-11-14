@@ -8,7 +8,7 @@ export const INPUT_KINDS: readonly { id: InputKind; name: string }[] = [
 ];
 
 /** Fisher-Yates shuffle, in place. `random` returns [0, 1). */
-export function shuffle<T>(items: T[], random: () => number): T[] {
+function shuffle<T>(items: T[], random: () => number): T[] {
   for (let i = items.length - 1; i > 0; i--) {
     const j = Math.floor(random() * (i + 1));
     [items[i], items[j]] = [items[j], items[i]];
