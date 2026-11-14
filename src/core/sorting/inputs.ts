@@ -1,19 +1,30 @@
-export type InputKind = 'random' | 'nearly' | 'reversed' | 'few';
+import { shuffle } from '../random';
+
+export type InputKind = 'random' | 'nearly' | 'reversed' | 'few' | 'sawtooth' | 'organ' | 'runs';
 
 export const INPUT_KINDS: readonly { id: InputKind; name: string }[] = [
   { id: 'random', name: 'Random' },
   { id: 'nearly', name: 'Nearly sorted' },
   { id: 'reversed', name: 'Reversed' },
   { id: 'few', name: 'Few distinct values' },
+  { id: 'sawtooth', name: 'Sawtooth' },
+  { id: 'organ', name: 'Organ pipes' },
+  { id: 'runs', name: 'Sorted runs' },
 ];
 
-/** Fisher-Yates shuffle, in place. `random` returns [0, 1). */
-function shuffle<T>(items: T[], random: () => number): T[] {
-  for (let i = items.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [items[i], items[j]] = [items[j], items[i]];
-  }
-  return items;
+/** The largest value an input may hold, and the most values. */
+export const MAX_VALUE = 999;
+export const MAX_SIZE = 256;
+
+/**
+ * Reads a list of whole numbers separated by commas, spaces or dots. Values
+ * are clamped to 1..MAX_VALUE and the list is cut at MAX_SIZE. Returns
+ * undefined when fewer than two numbers are found or anything else is present.
+ */
+export function parseValues(text: string): number[] | undefined {
+  const parts = text.split(/[\s,.;]+/).filter((part) => part !== '');
+  if (parts.length < 2 || parts.some((part) => !/^\d{1,6}$/.test(part))) return undefined;
+  return parts.slice(0, MAX_SIZE).map((part) => Math.max(1, Math.min(MAX_VALUE, Number(part))));
 }
 
 /** Builds an array of `size` values in 1..size with the given arrangement. */
@@ -38,6 +49,34 @@ export function makeInput(kind: InputKind, size: number, random: () => number): 
       const levels = Math.min(5, size);
       const values = sorted.map((_, i) => Math.ceil(((1 + (i % levels)) * size) / levels));
       return shuffle(values, random);
+    }
+    case 'sawtooth': {
+      // Four rising ramps, each covering the whole range.
+      const teeth = Math.min(4, size);
+      const order = Array.from({ length: size }, (_, i) => i);
+      const ramp = Math.ceil(size / teeth);
+      order.sort((a, b) => (a % ramp) - (b % ramp) || a - b);
+      const values = new Array<number>(size);
+      order.forEach((position, rank) => (values[position] = rank + 1));
+      return values;
+    }
+    case 'organ': {
+      // Odd values rising, then even values falling.
+      const up = sorted.filter((v) => v % 2 === 1);
+      const down = sorted.filter((v) => v % 2 === 0).reverse();
+      return [...up, ...down];
+    }
+    case 'runs': {
+      // A shuffle cut into pieces of random length, each sorted up or down.
+      shuffle(sorted, random);
+      const values: number[] = [];
+      for (let lo = 0; lo < size;) {
+        const length = 3 + Math.floor(random() * Math.max(3, size / 4));
+        const piece = sorted.slice(lo, lo + length).sort((a, b) => a - b);
+        values.push(...(random() < 0.3 ? piece.reverse() : piece));
+        lo += length;
+      }
+      return values;
     }
   }
 }
