@@ -15,6 +15,7 @@ import { hexToRgb, watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, prose, stats, type Mount } from '../layout';
 import { snapshotRing } from './ring';
+import { FONT } from '../../ui/font';
 
 const COLS = 96;
 const ROWS = 72;
@@ -205,6 +206,7 @@ export const mount: Mount = (root, entry) => {
     const slot = ring.pop();
     if (!slot) {
       message = 'No earlier generation is saved.';
+      player.clearHistory();
       return;
     }
     cells.set(slot.cells);
@@ -212,6 +214,8 @@ export const mount: Mount = (root, entry) => {
     population = slot.population;
     if (graph.length > 1) graph.pop();
     message = `Back to generation ${generation}.`;
+    // The player counts frames, not generations: once the last saved generation is used, Back is spent.
+    if (ring.size === 0) player.clearHistory();
   }
 
   /** The user's drawing becomes the pattern in the URL and the Reset target. */
@@ -297,7 +301,7 @@ export const mount: Mount = (root, entry) => {
     ctx.lineJoin = 'round';
     ctx.stroke();
     ctx.fillStyle = palette.muted;
-    ctx.font = '11px system-ui, sans-serif';
+    ctx.font = `11px ${FONT}`;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'top';
     ctx.fillText(`population, peak ${top}`, width - pad, 0);

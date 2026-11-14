@@ -23,7 +23,7 @@ export interface GridAlgorithmInfo {
   id: GridAlgorithm;
   name: string;
   summary: string;
-  /** Counts steps only: mud is treated as plain floor. */
+  /** Takes no account of step costs when choosing what to expand: mud is treated as plain floor. */
   unweighted: boolean;
   usesHeuristic: boolean;
 }
@@ -54,15 +54,17 @@ export const GRID_ALGORITHMS: readonly GridAlgorithmInfo[] = [
   {
     id: 'dfs',
     name: 'Depth-first search',
-    summary: 'Follows one branch as far as it goes. Finds a path, usually a poor one.',
+    summary:
+      'Follows one branch as far as it goes. Finds a path, usually a poor one. It ignores mud cost.',
     unweighted: true,
     usesHeuristic: false,
   },
   {
     id: 'greedy',
     name: 'Greedy best-first',
-    summary: 'Expands the cell that looks closest to the goal. Fast, but the path can be poor.',
-    unweighted: false,
+    summary:
+      'Expands the cell that looks closest to the goal. Fast, but the path can be poor. It ignores mud cost.',
+    unweighted: true,
     usesHeuristic: true,
   },
   {

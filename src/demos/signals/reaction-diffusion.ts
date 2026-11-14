@@ -134,6 +134,8 @@ export const mount: Mount = (root, entry) => {
     grid.a.set(slot.a);
     grid.b.set(slot.b);
     iterations = slot.iterations;
+    // The player counts frames, not ticks: once the last saved tick is used, Back is spent.
+    if (ring.size === 0) player?.clearHistory();
   }
 
   // --- Rendering ---
@@ -339,7 +341,10 @@ export const mount: Mount = (root, entry) => {
           draw();
         }),
       ),
-      el('p', { class: 'note', text: 'Drag on the canvas to paint chemical B.' }),
+      el('p', {
+        class: 'note',
+        text: 'Drag on the canvas to paint chemical B. Painting is not kept in the link.',
+      }),
     ),
     player.root,
   );

@@ -104,6 +104,7 @@ export function tracePlayer(options: TraceOptions): TracePlayer {
   const playButton = button(
     'Play',
     () => {
+      if (length === 0) return;
       if (!playing && position >= length) move(0);
       setPlaying(!playing);
     },
@@ -150,6 +151,8 @@ export function tracePlayer(options: TraceOptions): TracePlayer {
     scrub.set(position);
     disable(stepButton, position >= length);
     disable(backButton, position === 0);
+    disable(playButton, length === 0);
+    disable(resetButton, position === 0);
     label();
     options.render(position);
   }
@@ -188,6 +191,7 @@ export function tracePlayer(options: TraceOptions): TracePlayer {
     scrub.root,
     speedSlider.root,
   );
+  root.classList.add('playback');
 
   return {
     root,
@@ -276,13 +280,15 @@ export function simPlayer<S>(options: SimOptions<S>): SimPlayer {
   }
 
   const loop = createLoop((dt) => {
-    remember();
     if (options.ticksPerSecond) {
       budget += dt * speed * options.ticksPerSecond;
       const whole = Math.min(MAX_TICKS_PER_FRAME, Math.floor(budget));
       budget -= Math.floor(budget);
+      // A frame in which nothing advances leaves nothing for Back to undo.
+      if (whole > 0) remember();
       for (let i = 0; i < whole; i++) options.step(tick);
     } else {
+      remember();
       options.step(dt * speed);
     }
     options.draw();
@@ -359,6 +365,7 @@ export function simPlayer<S>(options: SimOptions<S>): SimPlayer {
     ),
     speedSlider.root,
   );
+  root.classList.add('playback');
 
   setPlaying(options.autoplay ?? !prefersReducedMotion());
 

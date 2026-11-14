@@ -25,6 +25,15 @@ export function hashParams(): URLSearchParams {
   return new URLSearchParams(at < 0 ? '' : hash.slice(at + 1));
 }
 
+/**
+ * True when the link did not set `key` and the screen is phone-sized: the demo
+ * may then start from a smaller default. The value differs from the usual
+ * default, so it is written into the link and other screens show the same.
+ */
+export function phoneDefault(key: string): boolean {
+  return !hashParams().has(key) && window.matchMedia('(max-width: 40rem)').matches;
+}
+
 /** The demo id in the hash, without the parameters. */
 export function hashRoute(): string {
   return window.location.hash.replace(/^#\/?/, '').split('?')[0];
@@ -65,7 +74,8 @@ export function urlState<T extends Record<string, Value>>(defaults: T): UrlState
       if (value === defaults[key]) continue;
       out.set(key, typeof value === 'boolean' ? (value ? '1' : '0') : String(value));
     }
-    const query = out.toString();
+    // Commas and tildes are safe in a hash and common in packed input; leaving them bare keeps links short.
+    const query = out.toString().replace(/%2C/g, ',').replace(/%7E/g, '~');
     const url = `${window.location.pathname}${window.location.search}#/${route}${query ? `?${query}` : ''}`;
     window.history.replaceState(null, '', url);
   };

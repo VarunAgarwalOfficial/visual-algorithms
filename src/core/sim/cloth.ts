@@ -236,8 +236,18 @@ export function stepCloth(
   return worst;
 }
 
-/** Removes every constraint crossed by the segment from (x0, y0) to (x1, y1). Returns how many. */
-export function cutCloth(c: Cloth, x0: number, y0: number, x1: number, y1: number): number {
+/**
+ * Removes every constraint crossed by the segment from (x0, y0) to (x1, y1). Returns how many.
+ * The indices of the removed constraints are added to `removed` if it is given.
+ */
+export function cutCloth(
+  c: Cloth,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  removed?: number[],
+): number {
   let cut = 0;
   const side = (ax: number, ay: number, bx: number, by: number, px: number, py: number) =>
     (bx - ax) * (py - ay) - (by - ay) * (px - ax);
@@ -253,10 +263,42 @@ export function cutCloth(c: Cloth, x0: number, y0: number, x1: number, y1: numbe
     const d4 = side(ax, ay, bx, by, x1, y1);
     if (d1 * d2 < 0 && d3 * d4 < 0) {
       c.alive[k] = 0;
+      removed?.push(k);
       cut++;
     }
   }
   return cut;
+}
+
+/** The most cut links a URL carries: enough for several strokes right across the finest cloth. */
+export const MAX_CUTS = 600;
+
+/**
+ * Packs constraint indices for the URL: sorted, then the gap from each to the
+ * next in base 36, joined by dots. At most `max` indices are kept, lowest first.
+ */
+export function packCuts(cuts: Iterable<number>, max = MAX_CUTS): string {
+  const sorted = [...new Set(cuts)]
+    .filter((k) => Number.isInteger(k) && k >= 0)
+    .sort((a, b) => a - b)
+    .slice(0, max);
+  return sorted.map((k, i) => (k - (i > 0 ? sorted[i - 1] : 0)).toString(36)).join('.');
+}
+
+/** Inverse of packCuts. Skips anything malformed and stops at `constraints` or `max` indices. */
+export function unpackCuts(text: string, constraints: number, max = MAX_CUTS): number[] {
+  const cuts: number[] = [];
+  let at = 0;
+  for (const part of text.slice(0, max * 4).split('.')) {
+    if (cuts.length >= max) break;
+    if (!/^[0-9a-z]{1,3}$/.test(part)) continue;
+    const gap = Number.parseInt(part, 36);
+    if (gap === 0 && cuts.length > 0) continue;
+    at += gap;
+    if (at >= constraints) break;
+    cuts.push(at);
+  }
+  return cuts;
 }
 
 /** The particle nearest to a point, or -1 if none is within `reach`. */

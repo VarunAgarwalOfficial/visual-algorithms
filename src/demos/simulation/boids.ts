@@ -17,10 +17,10 @@ import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { clamp, clampInt, every, fit, meter, oneOf, short, toWorld } from './common';
 
-/** The world is this tall; its width follows the shape of the canvas. */
+/** The world is the same whatever the canvas, so a link starts the same flock everywhere. */
+const WORLD_WIDTH = 800;
 const WORLD_HEIGHT = 600;
-const BASE_WIDTH = 800;
-/** Circles as x, y, radius for a world BASE_WIDTH wide. */
+/** Circles as x, y, radius. */
 const OBSTACLES: readonly number[] = [230, 190, 46, 560, 250, 62, 380, 450, 40];
 const POINTER_MODES = ['predator', 'attractor', 'off'] as const;
 /** The boid whose neighbourhood is drawn. */
@@ -66,9 +66,10 @@ export const mount: Mount = (root, entry) => {
   settings.speed = clampInt(settings.speed, 40, 240);
   settings.force = clampInt(settings.force, 40, 600);
   settings.pointer = oneOf(settings.pointer, POINTER_MODES);
+  settings.seed = clampInt(settings.seed, 0, 0xffffffff);
 
-  let worldWidth = BASE_WIDTH;
-  let obstacles: number[] = [];
+  const worldWidth = WORLD_WIDTH;
+  const obstacles = OBSTACLES;
   let flock: Flock = createFlock(0, worldWidth, WORLD_HEIGHT, seeded(1));
   let grid: SpatialGrid = createGrid(worldWidth, WORLD_HEIGHT, settings.radius);
   let tests = 0;
@@ -94,25 +95,9 @@ export const mount: Mount = (root, entry) => {
   });
 
   const theme = watchPalette(() => draw());
-  const stage = createStage(canvas, () => {
-    shapeWorld();
-    recount();
-    draw();
-  });
-
-  /** Makes the world as wide as the canvas is, relative to its height, stretching what is in it. */
-  function shapeWorld() {
-    const wanted = clamp(Math.round((WORLD_HEIGHT * stage.width) / stage.height), 400, 1600);
-    const stretch = wanted / worldWidth;
-    worldWidth = wanted;
-    for (let i = 0; i < flock.n; i++) flock.x[i] *= stretch;
-    flock.width = worldWidth;
-    obstacles = OBSTACLES.map((v, k) => (k % 3 === 0 ? (v * worldWidth) / BASE_WIDTH : v));
-    grid = createGrid(worldWidth, WORLD_HEIGHT, settings.radius);
-  }
+  const stage = createStage(canvas, () => draw());
 
   function reset() {
-    shapeWorld();
     flock = createFlock(settings.n, worldWidth, WORLD_HEIGHT, seeded(settings.seed));
     grid = createGrid(worldWidth, WORLD_HEIGHT, settings.radius);
     timer.reset();
@@ -258,6 +243,10 @@ export const mount: Mount = (root, entry) => {
       ctx.arc(pointer.x * s, pointer.y * s, Math.max(5, 9 * s), 0, Math.PI * 2);
       ctx.stroke();
     }
+    // The edge of the world, where the flock wraps round.
+    ctx.strokeStyle = palette.faint;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, 0.5, worldWidth * s - 1, WORLD_HEIGHT * s - 1);
     ctx.restore();
 
     if (due(!player?.playing)) {

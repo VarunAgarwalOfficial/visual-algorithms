@@ -1,8 +1,11 @@
 import {
+  MAX_CUTS,
   createCloth,
   cutCloth,
   nearestParticle,
+  packCuts,
   stepCloth,
+  unpackCuts,
   type Cloth,
   type ClothParams,
   type ClothPreset,
@@ -17,6 +20,8 @@ import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { clamp, clampInt, every, fit, meter, oneOf, short, toWorld } from './common';
 
+/** The area is the same whatever the canvas, so a link starts the same cloth everywhere. */
+const WIDTH = 800;
 const HEIGHT = 600;
 const PRESETS = ['cloth', 'rope', 'soft-body'] as const;
 const TOOLS = ['drag', 'cut'] as const;
@@ -55,6 +60,7 @@ export const mount: Mount = (root, entry) => {
     strain: true,
     tool: 'drag',
     released: '',
+    cuts: '',
   });
   const settings = url.state;
   settings.preset = oneOf(settings.preset, PRESETS);
@@ -65,7 +71,9 @@ export const mount: Mount = (root, entry) => {
   settings.wind = clampInt(settings.wind, -800, 800);
   settings.tearAt = clamp(settings.tearAt, 1.2, 4);
 
-  let cloth: Cloth = createCloth('cloth', 6, 800, HEIGHT);
+  let cloth: Cloth = createCloth('cloth', 6, WIDTH, HEIGHT);
+  /** Links cut by hand, as constraint indices, so a link reproduces them. */
+  let cuts = new Set<number>();
   let worst = 1;
   let grab: { index: number; x: number; y: number } | undefined;
   let knife: Point | undefined;
@@ -95,10 +103,10 @@ export const mount: Mount = (root, entry) => {
   }
 
   function reset() {
-    // The area takes the shape of the canvas, so the side walls are its edges.
-    const areaWidth = clampInt((HEIGHT * stage.width) / stage.height, 600, 1100);
-    cloth = createCloth(settings.preset as ClothPreset, settings.cols, areaWidth, HEIGHT);
+    cloth = createCloth(settings.preset as ClothPreset, settings.cols, WIDTH, HEIGHT);
     for (const i of releasedPins()) if (i < cloth.n) cloth.pinned[i] = 0;
+    cuts = new Set(unpackCuts(settings.cuts, cloth.constraints));
+    for (const k of cuts) cloth.alive[k] = 0;
     worst = 1;
     grab = undefined;
     knife = undefined;
@@ -109,6 +117,7 @@ export const mount: Mount = (root, entry) => {
 
   function rebuild() {
     settings.released = '';
+    settings.cuts = '';
     url.save();
     reset();
   }
@@ -124,12 +133,14 @@ export const mount: Mount = (root, entry) => {
     ctx.save();
     ctx.translate(view.x, view.y);
 
-    // The floor.
+    // The floor and the side walls.
     ctx.strokeStyle = palette.muted;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(0, HEIGHT * s - 0.5);
-    ctx.lineTo(cloth.width * s, HEIGHT * s - 0.5);
+    ctx.moveTo(0.5, 0);
+    ctx.lineTo(0.5, HEIGHT * s - 0.5);
+    ctx.lineTo(cloth.width * s - 0.5, HEIGHT * s - 0.5);
+    ctx.lineTo(cloth.width * s - 0.5, 0);
     ctx.stroke();
 
     // Links, one path per strain shade.
@@ -218,7 +229,15 @@ export const mount: Mount = (root, entry) => {
     move(point) {
       const at = world(point);
       if (knife) {
-        if (cutCloth(cloth, knife.x, knife.y, at.x, at.y) > 0 && !player.playing) draw();
+        const removed: number[] = [];
+        if (cutCloth(cloth, knife.x, knife.y, at.x, at.y, removed) > 0) {
+          for (const k of removed) cuts.add(k);
+          settings.cuts = packCuts(cuts);
+          url.save();
+          // Back must not bring a cut link back while the link says it is cut.
+          player.clearHistory();
+          if (!player.playing) draw();
+        }
         knife = at;
       } else if (grab) {
         grab.x = clamp(at.x, 0, cloth.width);
@@ -369,7 +388,10 @@ export const mount: Mount = (root, entry) => {
         },
       }).root,
       button('Mend and re-pin', rebuild),
-      el('p', { class: 'note', text: 'Click a square pin to release it.' }),
+      el('p', {
+        class: 'note',
+        text: `Click a square pin to release it. The link keeps released pins and up to ${MAX_CUTS} cut links, and applies them to the cloth at rest. It does not keep tears or where you dragged the cloth.`,
+      }),
     ),
     player.root,
   );

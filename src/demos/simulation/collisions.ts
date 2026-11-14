@@ -15,10 +15,13 @@ import { button, checkbox, el, fieldset, slider } from '../../ui/dom';
 import { simPlayer } from '../../ui/player';
 import { onDrag } from '../../ui/pointer';
 import { mix, watchPalette } from '../../ui/theme';
-import { urlState } from '../../ui/url';
+import { phoneDefault, urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { clamp, clampInt, every, fit, meter, short, toWorld } from './common';
+import { FONT } from '../../ui/font';
 
+/** The box is the same whatever the canvas, so a link starts the same discs everywhere. */
+const WIDTH = 800;
 const HEIGHT = 600;
 const TICKS = 120;
 const SHADES = 6;
@@ -54,13 +57,16 @@ export const mount: Mount = (root, entry) => {
     seed: 5,
   });
   const settings = url.state;
+  // On a small canvas the histogram would cover a third of the box.
+  if (phoneDefault('hist')) settings.hist = false;
   settings.n = clampInt(settings.n, 2, 2000);
   settings.radius = clamp(settings.radius, 2, 30);
   settings.speed = clampInt(settings.speed, 0, 400);
   settings.gravity = clampInt(settings.gravity, 0, 1500);
   settings.e = clamp(settings.e, 0, 1);
+  settings.seed = clampInt(settings.seed, 0, 0xffffffff);
 
-  let discs: Discs = createDiscs(0, 800, HEIGHT, 1, 0, 0, seeded(1));
+  let discs: Discs = createDiscs(0, WIDTH, HEIGHT, 1, 0, 0, seeded(1));
   let grid: SpatialGrid = gridFor(discs);
   const counts = { candidates: 0, contacts: 0 };
   let energyStart = 0;
@@ -82,11 +88,9 @@ export const mount: Mount = (root, entry) => {
   const totalEnergy = () => discKinetic(discs) + discPotential(discs, settings.gravity);
 
   function reset() {
-    // The box takes the shape of the canvas, so it fills it.
-    const boxWidth = clampInt((HEIGHT * stage.width) / stage.height, 600, 1100);
     discs = createDiscs(
       settings.n,
-      boxWidth,
+      WIDTH,
       HEIGHT,
       settings.radius,
       settings.mixed ? 1 : 0,
@@ -272,7 +276,7 @@ export const mount: Mount = (root, entry) => {
     ctx.strokeStyle = palette.muted;
     ctx.lineWidth = 1;
     ctx.strokeRect(left + 0.5, top + 0.5, w, h);
-    ctx.font = '12px system-ui, sans-serif';
+    ctx.font = `12px ${FONT}`;
     ctx.fillStyle = palette.ink;
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
@@ -464,7 +468,7 @@ export const mount: Mount = (root, entry) => {
         url.save();
         reset();
       }),
-      el('p', { class: 'note', text: 'Drag a disc to fling it.' }),
+      el('p', { class: 'note', text: 'Drag a disc to fling it. Flings are not kept in the link.' }),
     ),
     player.root,
   );

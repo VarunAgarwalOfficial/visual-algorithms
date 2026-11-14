@@ -20,7 +20,7 @@ import { button, checkbox, el, fieldset, select, slider } from '../../ui/dom';
 import { tracePlayer } from '../../ui/player';
 import { onDrag } from '../../ui/pointer';
 import { mix, watchPalette } from '../../ui/theme';
-import { urlState } from '../../ui/url';
+import { phoneDefault, urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 
 type Preset = 'random' | 'maze' | 'empty';
@@ -32,7 +32,7 @@ const PRESETS: readonly { id: Preset; name: string }[] = [
 type Brush = 'wall' | 'mud';
 const BRUSHES: readonly { id: Brush; name: string }[] = [
   { id: 'wall', name: 'Walls' },
-  { id: 'mud', name: `Mud (costs ${MUD_COST})` },
+  { id: 'mud', name: `Mud (${MUD_COST}× the cost of a step)` },
 ];
 const HEURISTICS: readonly { id: Heuristic; name: string }[] = [
   { id: 'manhattan', name: 'Manhattan' },
@@ -68,12 +68,17 @@ export const mount: Mount = (root, entry) => {
     preset: 'random',
     brush: 'wall',
     seed: 4,
+    // `paint` is what was painted, as the difference from the preset. `cells` is the
+    // whole grid, as older links stored it: still read, no longer written.
+    paint: '',
     cells: '',
     s: -1,
     g: -1,
     speed: 120,
   });
   const settings = url.state;
+  // Cells a finger can hit.
+  if (phoneDefault('cols')) settings.cols = 19;
   settings.cols = odd(Math.max(MIN_COLS, Math.min(MAX_COLS, Math.round(settings.cols))));
   const info = () => GRID_ALGORITHMS.find((a) => a.id === settings.alg) ?? GRID_ALGORITHMS[0];
   const heuristic = (): Heuristic => (settings.h === 'octile' ? 'octile' : 'manhattan');
@@ -81,6 +86,8 @@ export const mount: Mount = (root, entry) => {
   if (info().id === 'jps') settings.diag = true;
 
   let grid: Grid = emptyGrid(1, 1);
+  /** The preset grid before any painting: the link stores only how `grid` differs from it. */
+  let base = new Uint8Array(1);
   let start = 0;
   let goal = 0;
   let result: SearchResult = { steps: [], path: [], cost: 0 };
@@ -124,12 +131,19 @@ export const mount: Mount = (root, entry) => {
     const cols = settings.cols;
     const rows = rowsFor(cols);
     const random = seeded(settings.seed);
-    if (settings.cells) {
-      grid = { cols, rows, cells: unpackCells(settings.cells.slice(0, 20000), cols * rows) };
-      for (let i = 0; i < grid.cells.length; i++) if (grid.cells[i] > MUD) grid.cells[i] = FREE;
-    } else if (preset() === 'maze') grid = mazeGrid(cols, rows, random);
+    if (preset() === 'maze') grid = mazeGrid(cols, rows, random);
     else if (preset() === 'empty') grid = emptyGrid(cols, rows);
     else grid = randomGrid(cols, rows, random);
+    base = grid.cells.slice();
+    const n = cols * rows;
+    if (settings.paint) {
+      // Each value is how far the cell is from the preset, counting FREE, WALL, MUD in a ring.
+      const change = unpackCells(settings.paint.slice(0, 2 * n), n);
+      for (let i = 0; i < n; i++) grid.cells[i] = (base[i] + (change[i] % 3)) % 3;
+    } else if (settings.cells) {
+      grid.cells = unpackCells(settings.cells.slice(0, 2 * n), n);
+      for (let i = 0; i < n; i++) if (grid.cells[i] > MUD) grid.cells[i] = FREE;
+    }
 
     [start, goal] = defaultEnds();
     const inRange = (v: number) => Number.isInteger(v) && v >= 0 && v < cols * rows;
@@ -197,13 +211,18 @@ export const mount: Mount = (root, entry) => {
 
   /** Saves the painted grid and the end points into the URL. */
   function saveGrid() {
-    settings.cells = packCells(grid.cells);
+    const change = grid.cells.map((v, i) => (v - base[i] + 3) % 3);
+    let end = change.length;
+    while (end > 0 && change[end - 1] === 0) end--;
+    settings.paint = packCells(change.subarray(0, end));
+    settings.cells = '';
     const [s, g] = defaultEnds();
     settings.s = start === s && goal === g ? -1 : start;
     settings.g = start === s && goal === g ? -1 : goal;
   }
 
   function newGrid() {
+    settings.paint = '';
     settings.cells = '';
     settings.s = -1;
     settings.g = -1;
@@ -358,11 +377,12 @@ export const mount: Mount = (root, entry) => {
       return;
     }
     let text = `Path found: ${result.path.length - 1} steps, cost ${format(result.cost)}, after expanding ${total} cells.`;
-    if (info().usesHeuristic && settings.diag && heuristic() === 'manhattan') {
+    if (info().unweighted && grid.cells.includes(MUD)) {
+      text +=
+        ' This search ignores mud when choosing where to go, so a cheaper path may exist. The cost shown still counts the mud on its path.';
+    } else if (info().id === 'astar' && settings.diag && heuristic() === 'manhattan') {
       text +=
         ' Manhattan distance overestimates diagonal moves, so this may not be the cheapest path.';
-    } else if (info().unweighted && grid.cells.includes(MUD)) {
-      text += ' This search ignores mud, so a cheaper path may exist.';
     }
     status.textContent = text;
   }
@@ -444,6 +464,15 @@ export const mount: Mount = (root, entry) => {
   const status = el('p', { class: 'note', style: 'flex: 1 1 100%; min-height: 2.8em' });
   const caption = el('p', { class: 'note' });
 
+  const presetSelect = select<Preset>({
+    label: 'Preset',
+    options: PRESETS,
+    value: preset(),
+    onChange(id) {
+      settings.preset = id;
+      newGrid();
+    },
+  });
   const algorithmSelect = select<GridAlgorithm>({
     label: 'Algorithm',
     options: GRID_ALGORITHMS,
@@ -497,15 +526,7 @@ export const mount: Mount = (root, entry) => {
           url.save();
         },
       }).root,
-      select<Preset>({
-        label: 'Preset',
-        options: PRESETS,
-        value: preset(),
-        onChange(id) {
-          settings.preset = id;
-          newGrid();
-        },
-      }).root,
+      presetSelect.root,
       slider({
         label: 'Columns',
         min: MIN_COLS,
@@ -525,8 +546,12 @@ export const mount: Mount = (root, entry) => {
           newGrid();
         }),
         button('Clear', () => {
-          grid.cells.fill(FREE);
-          saveGrid();
+          // The same as the empty preset with nothing painted; the start and goal stay put.
+          settings.preset = 'empty';
+          presetSelect.input.value = 'empty';
+          settings.paint = '';
+          settings.cells = '';
+          loadGrid();
           retrace();
         }),
       ),
@@ -554,7 +579,10 @@ export const mount: Mount = (root, entry) => {
       ['color-mix(in srgb, var(--canvas-ink) 70%, var(--canvas-bg))', 'Wall'],
       ['var(--canvas-muted)', 'Mud (hatched)'],
     ]),
-    el('p', { class: 'note', text: 'Every algorithm on this grid: cells expanded · path cost' }),
+    el('p', {
+      class: 'note',
+      text: `Every algorithm on this grid: cells expanded · path cost. The cost always counts mud at ${MUD_COST} times a normal step. Only A* and Dijkstra take it into account while searching; BFS, DFS, greedy, bidirectional and JPS ignore it.`,
+    }),
     table.root,
   );
 
@@ -566,7 +594,7 @@ export const mount: Mount = (root, entry) => {
       'breadth-first   oldest cell first          (queue)\ndepth-first     newest cell first          (stack)\nDijkstra        lowest g                   g = cost from the start\ngreedy          lowest h                   h = estimated cost to the goal\nA*              lowest f = g + h',
     ),
     prose(
-      `A straight step costs 1, a diagonal step \`√2\`, and entering mud costs ${MUD_COST} times as much. A diagonal step is not allowed to cut a wall corner. A* finds a cheapest path when \`h\` never overestimates: Manhattan distance \`|dx| + |dy|\` is right for four directions, octile distance \`max + (√2 − 1)·min\` for eight. Try Manhattan with diagonal moves to see A* go wrong.`,
+      `A straight step costs 1, a diagonal step \`√2\`, and entering mud costs ${MUD_COST} times as much. Only Dijkstra and A* take the mud into account while searching. The others treat it as plain floor, and the cost shown for them is the true cost of the path they happened to find. A diagonal step is not allowed to cut a wall corner. A* finds a cheapest path when \`h\` never overestimates: Manhattan distance \`|dx| + |dy|\` is right for four directions, octile distance \`max + (√2 − 1)·min\` for eight. Try Manhattan with diagonal moves to see A* go wrong.`,
     ),
     prose(
       'Bidirectional search grows two smaller regions instead of one large one. Jump point search is A* on a uniform eight-way grid: it slides along straight lines and adds a cell to the frontier only where a wall corner forces a choice, so it expands far fewer cells. The pale cells are the ones it looked at while sliding.',

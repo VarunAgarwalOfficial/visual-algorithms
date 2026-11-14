@@ -16,6 +16,7 @@ import { hexToRgb, watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { clamp, clampInt, every, meter, oneOf, short } from './common';
+import { FONT } from '../../ui/font';
 
 const PRESETS = ['jets', 'plume', 'blank'] as const;
 const VIEWS = ['dye', 'before', 'after', 'pressure'] as const;
@@ -233,7 +234,7 @@ export const mount: Mount = (root, entry) => {
           : settings.view === 'after'
             ? 'Divergence after projection'
             : 'Pressure';
-      ctx.font = '12px system-ui, sans-serif';
+      ctx.font = `12px ${FONT}`;
       ctx.textBaseline = 'top';
       ctx.textAlign = 'left';
       const w = ctx.measureText(label).width;
@@ -433,7 +434,10 @@ export const mount: Mount = (root, entry) => {
         },
       }).root,
       button('Clear', reset),
-      el('p', { class: 'note', text: 'Drag on the canvas to stir and add dye.' }),
+      el('p', {
+        class: 'note',
+        text: 'Drag on the canvas to stir and add dye. What you stir in is not kept in the link.',
+      }),
     ),
     player.root,
   );

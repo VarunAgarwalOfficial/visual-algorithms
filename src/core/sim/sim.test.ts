@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { seeded } from '../random';
 import { createFlock, stepFlock, visibleNeighbours, type BoidParams } from './boids';
-import { createCloth, relax, stepCloth } from './cloth';
+import { createCloth, cutCloth, packCuts, relax, stepCloth, unpackCuts } from './cloth';
 import {
   collide,
   createDiscs,
@@ -244,6 +244,24 @@ describe('collisions', () => {
 });
 
 describe('cloth', () => {
+  it('cut links survive a round trip through the URL text, and bad text is harmless', () => {
+    const c = createCloth('cloth', 12, 800, 600);
+    const removed: number[] = [];
+    expect(cutCloth(c, 0, 200, 800, 210, removed)).toBe(removed.length);
+    expect(removed.length).toBeGreaterThan(5);
+    const text = packCuts([...removed, removed[0]]);
+    expect(text).toMatch(/^[0-9a-z.]+$/);
+    expect(unpackCuts(text, c.constraints)).toEqual([...removed].sort((a, b) => a - b));
+    expect(packCuts([0, 5, 41])).toBe('0.5.10');
+    expect(unpackCuts('0.5.10', 100)).toEqual([0, 5, 41]);
+    // Out of range, malformed and over-long input.
+    expect(unpackCuts('3.zzz.1', 10)).toEqual([3]);
+    expect(unpackCuts('2.-1.%41.x!.4..0', 10)).toEqual([2, 6]);
+    expect(unpackCuts('', 10)).toEqual([]);
+    expect(unpackCuts('1.'.repeat(5000), 100000, 50)).toHaveLength(50);
+    expect(packCuts(Array.from({ length: 900 }, (_, k) => k)).split('.')).toHaveLength(600);
+  });
+
   it('relaxation brings a stretched pair back to its rest length', () => {
     const c = createCloth('rope', 2, 100, 100);
     const rest = c.rest[0];
