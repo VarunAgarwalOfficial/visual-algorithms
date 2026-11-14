@@ -2,7 +2,7 @@
   "name": "visual-algorithms",
   "version": "1.0.0",
   "private": true,
-  "description": "Three interactive algorithm demos: Fourier epicycles, metaballs with marching squares, and sorting.",
+  "description": "Interactive demos of sorting, graph, geometry, signal, data-structure, string and simulation algorithms.",
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint . && prettier --check . && tsc --noEmit",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "smoke": "scripts/smoke.sh"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
