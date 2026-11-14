@@ -207,8 +207,9 @@ function mount(root: HTMLElement): () => void {
           reset();
         },
       }).root,
-      el('div', { class: 'buttons' }, playButton, stepButton, button('Shuffle', reset)),
+      button('Shuffle', reset),
     ),
+    fieldset('Playback', el('div', { class: 'buttons' }, playButton, stepButton)),
   );
 
   about.append(

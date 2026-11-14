@@ -221,8 +221,9 @@ h1 {
 .stage canvas {
   display: block;
   width: 100%;
-  height: min(68vh, 36rem);
-  min-height: 18rem;
+  aspect-ratio: 4 / 3;
+  max-height: min(70vh, 36rem);
+  min-height: 15rem;
 }
 
 .stage canvas.drawing {
@@ -328,12 +329,13 @@ button,
   text-align: center;
 }
 
-button:hover:not(:disabled),
+button:hover:not([aria-disabled='true']),
 .file-button:hover {
   border-color: var(--muted);
 }
 
-button:disabled {
+/* aria-disabled rather than disabled, so a button keeps focus when it runs out of work. */
+button[aria-disabled='true'] {
   opacity: 0.45;
   cursor: default;
 }
@@ -347,7 +349,7 @@ button[aria-pressed='true'] {
 
 .buttons {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
 }
 
@@ -373,23 +375,40 @@ button[aria-pressed='true'] {
   outline-offset: 2px;
 }
 
+.readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  margin-top: 0.75rem;
+}
+
+.readout:empty {
+  display: none;
+}
+
+.readout .note {
+  flex: 1 1 14rem;
+}
+
 .stats {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.2rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.75rem;
+  width: 100%;
   margin: 0;
-  font-size: 0.9rem;
 }
 
 .stats dt {
   color: var(--muted);
+  font-size: 0.8rem;
 }
 
 .stats dd {
   margin: 0;
-  font-family: var(--mono);
+  font: 1.15rem var(--mono);
   font-variant-numeric: tabular-nums;
-  text-align: right;
 }
 
 .note {
