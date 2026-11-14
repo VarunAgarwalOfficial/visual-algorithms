@@ -1,4 +1,4 @@
-import type { Point } from '../geometry';
+import type { Point } from '../point';
 
 /** Reads a flat list of numbers ("x y x y" or "x,y x,y") into points, as used by SVG polylines. */
 export function parsePoints(text: string): Point[] {
@@ -72,4 +72,36 @@ export function normalise(points: readonly Point[]): Point[] {
   const cy = (minY + maxY) / 2;
   const half = Math.max(maxX - minX, maxY - minY) / 2 || 1;
   return points.map((p) => ({ x: (p.x - cx) / half, y: (p.y - cy) / half }));
+}
+
+/**
+ * Joins several outlines into one path for a single pen. Starts with the
+ * longest, then keeps moving to whichever remaining outline has a point nearest
+ * the pen. A closed outline (first point equal to its last) is entered at that
+ * nearest point; an open one at whichever end is nearer.
+ */
+export function joinOutlines(outlines: readonly (readonly Point[])[]): Point[] {
+  const rest = outlines.filter((o) => o.length > 0).map((o) => [...o]);
+  if (rest.length === 0) return [];
+  rest.sort((a, b) => pathLength(b, false) - pathLength(a, false));
+  const out = rest.shift() as Point[];
+  const gap = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
+
+  while (rest.length > 0) {
+    const pen = out[out.length - 1];
+    let best = { outline: 0, index: 0, distance: Infinity };
+    rest.forEach((points, outline) => {
+      const closed = gap(points[0], points[points.length - 1]) < 1e-6;
+      const candidates = closed ? points.map((_, i) => i) : [0, points.length - 1];
+      for (const index of candidates) {
+        const distance = gap(pen, points[index]);
+        if (distance < best.distance) best = { outline, index, distance };
+      }
+    });
+    const [points] = rest.splice(best.outline, 1);
+    const closed = gap(points[0], points[points.length - 1]) < 1e-6;
+    if (closed) out.push(...points.slice(best.index), ...points.slice(0, best.index + 1));
+    else out.push(...(best.index === 0 ? points : points.reverse()));
+  }
+  return out;
 }

@@ -1,11 +1,14 @@
-import { dft, epicycleChain, toEpicycles, traceCurve, type Epicycle } from '../core/fourier/dft';
-import { normalise, pathLength, resample } from '../core/fourier/path';
-import { heart, smiley, square, star, trefoil } from '../core/fourier/shapes';
-import type { Point } from '../core/geometry';
-import { createLoop, createStage } from '../ui/canvas';
-import { button, checkbox, el, fieldset, select, slider } from '../ui/dom';
-import { prefersReducedMotion, watchPalette } from '../ui/theme';
-import { buildLayout, prose, type Demo } from './layout';
+import { dft, epicycleChain, toEpicycles, traceCurve, type Epicycle } from '../../core/fourier/dft';
+import { normalise, pathLength, resample } from '../../core/fourier/path';
+import { heart, smiley, square, star, trefoil } from '../../core/fourier/shapes';
+import type { Point } from '../../core/point';
+import { packPoints, unpackPoints } from '../../core/encode';
+import { createStage } from '../../ui/canvas';
+import { button, checkbox, el, fieldset, select, slider } from '../../ui/dom';
+import { simPlayer } from '../../ui/player';
+import { watchPalette } from '../../ui/theme';
+import { urlState } from '../../ui/url';
+import { buildLayout, prose, type Mount } from '../layout';
 import { sampleSvg } from './svg';
 
 /** Samples taken along the outline. The DFT is O(N²), so this stays modest. */
@@ -17,6 +20,8 @@ const MAX_CIRCLES = SAMPLES / 2 - 1;
 const LAP_SECONDS = 14;
 const MAX_FILE_BYTES = 2_000_000;
 const TAU = 2 * Math.PI;
+/** A drawn or loaded outline is kept in the URL at this many points. */
+const SHARED_POINTS = 96;
 
 const PRESETS = [
   { id: 'smiley', name: 'Smiley (2022 original)', points: smiley },
@@ -28,39 +33,27 @@ const PRESETS = [
 
 type ShapeId = (typeof PRESETS)[number]['id'] | 'custom';
 
-function mount(root: HTMLElement): () => void {
+export const mount: Mount = (root, entry) => {
   const { canvas, panel, about } = buildLayout(
     root,
-    fourier,
+    entry,
     'Animation of rotating circles joined tip to tail, tracing the outline of a shape.',
   );
 
-  const reduced = prefersReducedMotion();
+  const url = urlState({ shape: 'smiley', circles: 32, rings: true, outline: true, pts: '' });
+  const settings = url.state;
+  settings.circles = Math.max(1, Math.min(MAX_CIRCLES, Math.round(settings.circles)));
   let samples: Point[] = [];
   let epicycles: Epicycle[] = [];
   let curve: Float64Array = new Float64Array(0);
-  let circles = 32;
-  let speed = 1;
   let time = 0; // position in the lap, [0, 1)
   let traced = 0; // how many curve points the pen has drawn so far
-  let showCircles = true;
-  let showTarget = true;
   let drawing = false;
   let stroke: Point[] = [];
   let strokeActive = false;
 
   const theme = watchPalette(() => draw());
   const stage = createStage(canvas, () => draw());
-  const loop = createLoop((dt) => {
-    time += (dt * speed) / LAP_SECONDS;
-    if (time >= 1) {
-      time -= 1;
-      traced = CURVE_POINTS;
-    }
-    traced = Math.max(traced, Math.floor(time * CURVE_POINTS));
-    draw();
-  });
-
   // --- Model ---
 
   function setShape(points: readonly Point[]) {
@@ -71,13 +64,14 @@ function mount(root: HTMLElement): () => void {
   }
 
   function retrace() {
-    curve = traceCurve(epicycles, circles, CURVE_POINTS);
+    curve = traceCurve(epicycles, settings.circles, CURVE_POINTS);
   }
 
   function restart() {
     time = 0;
     // While paused (the default with reduced motion) show the finished drawing, not a blank canvas.
-    traced = playing ? 0 : CURVE_POINTS;
+    traced = player?.playing ? 0 : CURVE_POINTS;
+    player?.clearHistory();
     draw();
   }
 
@@ -101,7 +95,7 @@ function mount(root: HTMLElement): () => void {
     const px = (x: number) => cx + x * scale;
     const py = (y: number) => cy + y * scale;
 
-    if (showTarget) {
+    if (settings.outline) {
       ctx.beginPath();
       for (const p of samples) ctx.lineTo(px(p.x), py(p.y));
       ctx.closePath();
@@ -120,8 +114,8 @@ function mount(root: HTMLElement): () => void {
       ctx.stroke();
     }
 
-    const chain = epicycleChain(epicycles, time, circles);
-    if (showCircles) {
+    const chain = epicycleChain(epicycles, time, settings.circles);
+    if (settings.rings) {
       ctx.lineWidth = 1;
       ctx.strokeStyle = palette.muted;
       ctx.globalAlpha = 0.45;
@@ -193,6 +187,9 @@ function mount(root: HTMLElement): () => void {
         setDrawing(false);
         setShape(preset.points());
         say('');
+        settings.shape = id;
+        settings.pts = '';
+        url.save();
       }
     },
   });
@@ -205,6 +202,15 @@ function mount(root: HTMLElement): () => void {
     shape.input.value = 'custom';
     setShape(points);
     say(message);
+    settings.shape = 'custom';
+    // The link carries a coarser copy of the outline, scaled into the unit square.
+    settings.pts = packPoints(
+      normalise(resample(points, SHARED_POINTS)).map((p) => ({
+        x: (p.x + 1) / 2,
+        y: (p.y + 1) / 2,
+      })),
+    );
+    url.save();
   }
 
   const fileInput = el('input', { type: 'file', accept: '.svg,image/svg+xml' });
@@ -234,11 +240,10 @@ function mount(root: HTMLElement): () => void {
     drawButton.textContent = on ? 'Cancel' : 'Draw';
     canvas.classList.toggle('drawing', on);
     if (on) {
-      loop.stop();
+      player.pause();
       say('Drag on the canvas with a mouse, pen or finger.');
     } else {
       say('');
-      if (playing) loop.start();
     }
     draw();
   }
@@ -289,66 +294,56 @@ function mount(root: HTMLElement): () => void {
     label: 'Circles',
     min: 1,
     max: MAX_CIRCLES,
-    value: circles,
+    value: settings.circles,
     onInput(value) {
-      circles = value;
+      settings.circles = value;
+      url.save();
       retrace();
       draw();
     },
   });
 
-  const speedSlider = slider({
-    label: 'Speed',
-    min: 0.25,
-    max: 4,
-    step: 0.25,
-    value: speed,
-    format: (v) => `${v}×`,
-    onInput: (value) => (speed = value),
+  const player = simPlayer<{ time: number; traced: number }>({
+    step(dt) {
+      if (drawing) return;
+      time += dt / LAP_SECONDS;
+      if (time >= 1) {
+        time -= 1;
+        traced = CURVE_POINTS;
+      }
+      traced = Math.max(traced, Math.floor(time * CURVE_POINTS));
+    },
+    draw,
+    snapshot: () => ({ time, traced }),
+    restore(saved) {
+      ({ time, traced } = saved);
+    },
+    reset() {
+      time = 0;
+      traced = 0;
+    },
   });
 
-  let playing = !reduced;
-  const playButton = button('', () => setPlaying(!playing), 'primary');
-  function setPlaying(on: boolean) {
-    playing = on;
-    playButton.textContent = on ? 'Pause' : 'Play';
-    if (on && !drawing) loop.start();
-    else loop.stop();
-  }
-  const restartButton = button('Restart', () => {
-    time = 0;
-    traced = 0;
-    setPlaying(true);
-    draw();
-  });
+  const toggle = (label: string, key: 'rings' | 'outline') =>
+    checkbox({
+      label,
+      checked: settings[key],
+      onChange(checked) {
+        settings[key] = checked;
+        url.save();
+        draw();
+      },
+    });
 
   panel.append(
     fieldset('Shape', shape.root, el('div', { class: 'buttons' }, fileButton, drawButton), note),
     fieldset(
       'Series',
       circlesSlider.root,
-      checkbox({
-        label: 'Show circles',
-        checked: showCircles,
-        onChange(checked) {
-          showCircles = checked;
-          draw();
-        },
-      }),
-      checkbox({
-        label: 'Show original outline',
-        checked: showTarget,
-        onChange(checked) {
-          showTarget = checked;
-          draw();
-        },
-      }),
+      toggle('Show circles', 'rings'),
+      toggle('Show original outline', 'outline'),
     ),
-    fieldset(
-      'Playback',
-      speedSlider.root,
-      el('div', { class: 'buttons' }, playButton, restartButton),
-    ),
+    player.root,
   );
 
   about.append(
@@ -363,20 +358,21 @@ function mount(root: HTMLElement): () => void {
     ),
   );
 
-  setShape(PRESETS[0].points());
-  setPlaying(playing);
+  const shared = unpackPoints(settings.pts);
+  const preset = PRESETS.find((p) => p.id === settings.shape);
+  if (settings.shape === 'custom' && shared.length >= 3) {
+    shape.input.append(el('option', { value: 'custom', text: 'Custom' }));
+    shape.input.value = 'custom';
+    setShape(shared);
+  } else {
+    shape.input.value = (preset ?? PRESETS[0]).id;
+    setShape((preset ?? PRESETS[0]).points());
+  }
 
   return () => {
-    loop.stop();
+    player.dispose();
     stage.dispose();
     theme.dispose();
     document.removeEventListener('keydown', onKeyDown);
   };
-}
-
-export const fourier: Demo = {
-  id: 'fourier',
-  title: 'Fourier epicycles',
-  summary: 'Any closed outline can be drawn by a chain of circles turning at whole-number speeds.',
-  mount,
 };

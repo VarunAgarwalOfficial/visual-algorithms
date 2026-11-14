@@ -1,4 +1,4 @@
-import type { Point } from '../geometry';
+import type { Point } from '../point';
 import { parsePoints } from './path';
 
 const TAU = 2 * Math.PI;

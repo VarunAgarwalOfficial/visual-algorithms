@@ -1,31 +1,41 @@
-import { createBalls, fieldAt, sampleField, stepBalls, type Ball } from '../core/marching/field';
-import { marchingSquares } from '../core/marching/squares';
-import { createLoop, createStage } from '../ui/canvas';
-import { button, checkbox, el, fieldset, slider } from '../ui/dom';
-import { hexToRgb, prefersReducedMotion, watchPalette } from '../ui/theme';
-import { buildLayout, prose, type Demo } from './layout';
+import { createBalls, fieldAt, sampleField, stepBalls, type Ball } from '../../core/marching/field';
+import { marchingSquares } from '../../core/marching/squares';
+import { adaptiveContour } from '../../core/marching/adaptive';
+import { newSeed, seeded } from '../../core/random';
+import { createStage } from '../../ui/canvas';
+import { button, checkbox, el, fieldset, slider } from '../../ui/dom';
+import { simPlayer } from '../../ui/player';
+import { hexToRgb, watchPalette } from '../../ui/theme';
+import { urlState } from '../../ui/url';
+import { buildLayout, prose, type Mount } from '../layout';
 
 const THRESHOLD = 1;
-/** Seconds advanced by the Step button. */
-const STEP_SECONDS = 1 / 12;
+/** The adaptive variant starts from cells this many halvings coarser than the cell size. */
+const ADAPTIVE_LEVELS = 3;
 /** The field shading is computed on a coarser raster and scaled up. */
 const SHADE_PIXEL = 4;
 
-function mount(root: HTMLElement): () => void {
+export const mount: Mount = (root, entry) => {
   const { canvas, panel, about } = buildLayout(
     root,
-    metaballs,
+    entry,
     'Animation of soft blobs drifting and merging, outlined on a square grid.',
   );
 
-  let cellSize = 24;
-  let ballCount = 6;
-  let interpolate = true;
-  let showGrid = true;
-  let showSamples = true;
-  let showField = false;
+  const url = urlState({
+    cell: 24,
+    balls: 6,
+    seed: 7,
+    adaptive: false,
+    lerp: true,
+    grid: true,
+    corners: true,
+    field: false,
+  });
+  const settings = url.state;
+  settings.cell = Math.max(4, Math.min(80, Math.round(settings.cell)));
+  settings.balls = Math.max(1, Math.min(12, Math.round(settings.balls)));
   let balls: Ball[] = [];
-  let segmentCount = 0;
 
   const shade = document.createElement('canvas');
   const shadeCtx = shade.getContext('2d');
@@ -48,13 +58,10 @@ function mount(root: HTMLElement): () => void {
     }
     draw();
   });
-  const loop = createLoop((dt) => {
-    stepBalls(balls, dt, stage.width, stage.height);
-    draw();
-  });
 
   function reset() {
-    balls = createBalls(ballCount, stage.width, stage.height, Math.random);
+    balls = createBalls(settings.balls, stage.width, stage.height, seeded(settings.seed));
+    player?.clearHistory();
     draw();
   }
 
@@ -65,56 +72,96 @@ function mount(root: HTMLElement): () => void {
     const { palette } = theme;
     ctx.clearRect(0, 0, width, height);
 
-    if (showField) drawField();
+    if (settings.field) drawField();
 
+    const cellSize = settings.cell;
     const cols = Math.ceil(width / cellSize);
     const rows = Math.ceil(height / cellSize);
-    const grid = sampleField(balls, cols, rows, cellSize);
+    const uniformSamples = (cols + 1) * (rows + 1);
+    let segments: number[];
+    let scale = cellSize;
 
-    if (showGrid) {
-      ctx.beginPath();
-      for (let c = 0; c <= cols; c++) {
-        const x = Math.round(c * cellSize) + 0.5;
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-      }
-      for (let r = 0; r <= rows; r++) {
-        const y = Math.round(r * cellSize) + 0.5;
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-      }
-      ctx.strokeStyle = palette.faint;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
+    ctx.strokeStyle = palette.faint;
+    ctx.fillStyle = palette.ink;
+    ctx.lineWidth = 1;
+    const dot = Math.min(5, Math.max(2, cellSize / 6));
 
-    if (showSamples && cellSize >= 8) {
-      // Corners inside the surface are drawn solid: these are the bits of the case index.
-      const size = Math.min(5, Math.max(2, cellSize / 6));
-      ctx.fillStyle = palette.ink;
-      const stride = cols + 1;
-      for (let r = 0; r <= rows; r++) {
-        for (let c = 0; c <= cols; c++) {
-          if (grid.values[r * stride + c] >= THRESHOLD) {
-            ctx.fillRect(c * cellSize - size / 2, r * cellSize - size / 2, size, size);
+    if (settings.adaptive) {
+      const result = adaptiveContour(
+        (x, y) => fieldAt(balls, x, y),
+        width,
+        height,
+        cellSize,
+        ADAPTIVE_LEVELS,
+        THRESHOLD,
+        settings.lerp,
+      );
+      segments = result.segments;
+      scale = 1;
+      if (settings.grid) {
+        // The quadtree itself: big squares where nothing happens, small ones along the outline.
+        ctx.beginPath();
+        for (let k = 0; k < result.leaves.length; k += 3) {
+          ctx.rect(
+            Math.round(result.leaves[k]) + 0.5,
+            Math.round(result.leaves[k + 1]) + 0.5,
+            result.leaves[k + 2],
+            result.leaves[k + 2],
+          );
+        }
+        ctx.stroke();
+      }
+      if (settings.corners && cellSize >= 8) {
+        for (let k = 0; k < result.samples.length; k += 3) {
+          if (result.samples[k + 2] >= THRESHOLD) {
+            ctx.fillRect(result.samples[k] - dot / 2, result.samples[k + 1] - dot / 2, dot, dot);
           }
         }
       }
+      const used = result.samples.length / 3;
+      stats.textContent = `${used} samples instead of ${uniformSamples} (${Math.round(
+        (100 * used) / uniformSamples,
+      )}%), ${segments.length / 4} segments`;
+    } else {
+      const grid = sampleField(balls, cols, rows, cellSize);
+      if (settings.grid) {
+        ctx.beginPath();
+        for (let c = 0; c <= cols; c++) {
+          const x = Math.round(c * cellSize) + 0.5;
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+        }
+        for (let r = 0; r <= rows; r++) {
+          const y = Math.round(r * cellSize) + 0.5;
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+        }
+        ctx.stroke();
+      }
+      if (settings.corners && cellSize >= 8) {
+        // Corners inside the surface are drawn solid: these are the bits of the case index.
+        const stride = cols + 1;
+        for (let r = 0; r <= rows; r++) {
+          for (let c = 0; c <= cols; c++) {
+            if (grid.values[r * stride + c] >= THRESHOLD) {
+              ctx.fillRect(c * cellSize - dot / 2, r * cellSize - dot / 2, dot, dot);
+            }
+          }
+        }
+      }
+      segments = marchingSquares(grid, THRESHOLD, settings.lerp);
+      stats.textContent = `${uniformSamples} samples, ${segments.length / 4} segments`;
     }
 
-    const segments = marchingSquares(grid, THRESHOLD, interpolate);
-    segmentCount = segments.length / 4;
     ctx.beginPath();
     for (let k = 0; k < segments.length; k += 4) {
-      ctx.moveTo(segments[k] * cellSize, segments[k + 1] * cellSize);
-      ctx.lineTo(segments[k + 2] * cellSize, segments[k + 3] * cellSize);
+      ctx.moveTo(segments[k] * scale, segments[k + 1] * scale);
+      ctx.lineTo(segments[k + 2] * scale, segments[k + 3] * scale);
     }
     ctx.strokeStyle = palette.accent;
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
     ctx.stroke();
-
-    stats.textContent = `${cols} × ${rows} cells, ${segmentCount} segments`;
   }
 
   /** Evaluates the field per pixel (coarsely) and tints the inside: the brute-force picture. */
@@ -148,26 +195,24 @@ function mount(root: HTMLElement): () => void {
   // --- Controls ---
 
   const stats = el('p', { class: 'note' });
-  const redraw =
-    <T>(apply: (value: T) => void) =>
-    (value: T) => {
-      apply(value);
-      draw();
-    };
+  const toggle = (label: string, key: 'adaptive' | 'lerp' | 'grid' | 'corners' | 'field') =>
+    checkbox({
+      label,
+      checked: settings[key],
+      onChange(checked) {
+        settings[key] = checked;
+        url.save();
+        draw();
+      },
+    });
 
-  let playing = !prefersReducedMotion();
-  const playButton = button('', () => setPlaying(!playing), 'primary');
-  const stepButton = button('Step', () => {
-    setPlaying(false);
-    stepBalls(balls, STEP_SECONDS, stage.width, stage.height);
-    draw();
+  const player = simPlayer<Ball[]>({
+    step: (dt) => stepBalls(balls, dt, stage.width, stage.height),
+    draw,
+    snapshot: () => balls.map((b) => ({ ...b })),
+    restore: (saved) => (balls = saved),
+    reset,
   });
-  function setPlaying(on: boolean) {
-    playing = on;
-    playButton.textContent = on ? 'Pause' : 'Play';
-    if (on) loop.start();
-    else loop.stop();
-  }
 
   panel.append(
     fieldset(
@@ -177,26 +222,19 @@ function mount(root: HTMLElement): () => void {
         min: 4,
         max: 80,
         step: 2,
-        value: cellSize,
+        value: settings.cell,
         format: (v) => `${v} px`,
-        onInput: redraw((v) => (cellSize = v)),
+        onInput(value) {
+          settings.cell = value;
+          url.save();
+          draw();
+        },
       }).root,
-      checkbox({
-        label: 'Interpolate crossings',
-        checked: interpolate,
-        onChange: redraw((v) => (interpolate = v)),
-      }),
-      checkbox({ label: 'Show grid', checked: showGrid, onChange: redraw((v) => (showGrid = v)) }),
-      checkbox({
-        label: 'Show inside corners',
-        checked: showSamples,
-        onChange: redraw((v) => (showSamples = v)),
-      }),
-      checkbox({
-        label: 'Show field',
-        checked: showField,
-        onChange: redraw((v) => (showField = v)),
-      }),
+      toggle('Adaptive sampling (quadtree)', 'adaptive'),
+      toggle('Interpolate crossings', 'lerp'),
+      toggle('Show grid', 'grid'),
+      toggle('Show inside corners', 'corners'),
+      toggle('Show field', 'field'),
       stats,
     ),
     fieldset(
@@ -205,15 +243,20 @@ function mount(root: HTMLElement): () => void {
         label: 'Count',
         min: 1,
         max: 12,
-        value: ballCount,
+        value: settings.balls,
         onInput(value) {
-          ballCount = value;
+          settings.balls = value;
+          url.save();
           reset();
         },
       }).root,
-      button('Shuffle', reset),
+      button('Shuffle', () => {
+        settings.seed = newSeed();
+        url.save();
+        reset();
+      }),
     ),
-    fieldset('Playback', el('div', { class: 'buttons' }, playButton, stepButton)),
+    player.root,
   );
 
   about.append(
@@ -224,23 +267,18 @@ function mount(root: HTMLElement): () => void {
       'Marching squares only samples the field at grid corners. The four corners of a cell are inside or outside, which gives 16 cases, and a lookup table says which edges the outline crosses.',
     ),
     prose(
+      'The adaptive variant does not sample every corner. It starts from cells eight times larger and splits a cell in four only when its corners or its centre disagree about being inside, so the samples crowd along the outline and the empty and full areas are skipped. The readout shows how many samples that saves.',
+    ),
+    prose(
       'Without interpolation each crossing sits at the middle of its edge. With it, the crossing slides to where a straight line between the two corner values would reach 1. Raise the cell size to see the difference.',
     ),
   );
 
   reset();
-  setPlaying(playing);
 
   return () => {
-    loop.stop();
+    player.dispose();
     stage.dispose();
     theme.dispose();
   };
-}
-
-export const metaballs: Demo = {
-  id: 'metaballs',
-  title: 'Metaballs',
-  summary: 'Blobs that merge as they meet, outlined by marching squares on a coarse grid.',
-  mount,
 };
