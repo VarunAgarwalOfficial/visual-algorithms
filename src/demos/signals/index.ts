@@ -1,4 +1,6 @@
 import type { DemoEntry } from '../layout';
+import { analysisDemos } from './list-analysis';
+import { fractalDemos } from './list-fractals';
 
 export const demos: readonly DemoEntry[] = [
   {
@@ -9,4 +11,6 @@ export const demos: readonly DemoEntry[] = [
     keywords: 'dft series circles drawing svg',
     load: () => import('./fourier'),
   },
+  ...analysisDemos,
+  ...fractalDemos,
 ];
