@@ -1,11 +1,10 @@
 import './style.css';
 import type { DemoEntry } from './demos/layout';
 import { ALL_DEMOS, SECTIONS, searchDemos, sectionOf } from './demos/registry';
+import { SITE_TITLE, mountHome, mountNotFound, type Home } from './home';
 import { button, el } from './ui/dom';
-import { setTheme, themeChoice, type ThemeChoice } from './ui/theme';
+import { isDark, setTheme, themeChoice, type ThemeChoice } from './ui/theme';
 import { hashParams, hashRoute } from './ui/url';
-
-const SITE_TITLE = 'Visual algorithms';
 
 function required<T extends HTMLElement>(selector: string): T {
   const node = document.querySelector<T>(selector);
@@ -16,6 +15,12 @@ function required<T extends HTMLElement>(selector: string): T {
 const main = required('#main');
 const tools = required('#tools');
 
+// The skip link must not change the hash, which is the route.
+required('.skip').addEventListener('click', (event) => {
+  event.preventDefault();
+  main.focus();
+});
+
 // --- Theme ---
 
 const THEME_LABELS: Record<ThemeChoice, string> = { auto: 'Auto', light: 'Light', dark: 'Dark' };
@@ -24,10 +29,14 @@ const themeButton = button('', () => {
   setTheme(THEME_ORDER[(THEME_ORDER.indexOf(themeChoice()) + 1) % THEME_ORDER.length]);
   labelTheme();
 });
-themeButton.classList.add('quiet');
+themeButton.classList.add('quiet', 'theme');
 function labelTheme() {
   themeButton.textContent = `Theme: ${THEME_LABELS[themeChoice()]}`;
+  // The browser's own chrome (address bar on a phone) follows the page.
+  themeColour?.setAttribute('content', isDark() ? '#131516' : '#f6f5f1');
 }
+const themeColour = document.querySelector('meta[name="theme-color"]');
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', labelTheme);
 setTheme(themeChoice());
 labelTheme();
 
@@ -75,7 +84,7 @@ function setActive(index: number) {
 
 function openResults(open: boolean) {
   // On the home page the index itself is the result list.
-  const show = open && hashRoute() !== '';
+  const show = open && !home;
   results.hidden = !show;
   search.setAttribute('aria-expanded', String(show));
   if (show) renderResults();
@@ -83,7 +92,7 @@ function openResults(open: boolean) {
 
 search.addEventListener('focus', () => openResults(true));
 search.addEventListener('input', () => {
-  if (hashRoute() === '') filterHome(search.value);
+  if (home) home.filter(search.value);
   else openResults(true);
 });
 search.addEventListener('keydown', (event) => {
@@ -133,7 +142,7 @@ const help = el(
 );
 document.body.append(help);
 const helpButton = button('Keys', () => help.showModal());
-helpButton.classList.add('quiet');
+helpButton.classList.add('quiet', 'keys');
 helpButton.setAttribute('aria-label', 'Keyboard shortcuts');
 
 document.addEventListener('keydown', (event) => {
@@ -160,93 +169,35 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
-tools.append(el('div', { class: 'search' }, search, results), themeButton, helpButton);
+tools.append(
+  el('div', { class: 'search' }, search, el('kbd', { 'aria-hidden': 'true', text: '/' }), results),
+  themeButton,
+  helpButton,
+);
 
-// --- Home: the grouped index ---
-
-let filterHome: (query: string) => void = () => {};
-
-function mountHome(root: HTMLElement): () => void {
-  const count = el('p', { class: 'note', role: 'status' });
-  const sections = SECTIONS.filter((s) => s.demos.length > 0).map((section) => {
-    const cards = section.demos.map((demo) => ({
-      demo,
-      node: el(
-        'li',
-        {},
-        el(
-          'a',
-          { class: 'card', href: `#/${demo.id}` },
-          el('h3', { text: demo.title }),
-          el('p', { text: demo.summary }),
-        ),
-      ),
-    }));
-    const node = el(
-      'section',
-      { class: 'group', id: `section-${section.id}`, 'aria-labelledby': `heading-${section.id}` },
-      el(
-        'div',
-        { class: 'group-head' },
-        el('h2', { id: `heading-${section.id}`, text: section.title }),
-        el('p', { text: section.blurb }),
-      ),
-      el('ul', { class: 'cards' }, ...cards.map((c) => c.node)),
-    );
-    return { section, node, cards };
-  });
-
-  const jump = el(
-    'ul',
-    { class: 'jump', 'aria-label': 'Sections' },
-    ...sections.map(({ section, node }) => {
-      const link = button(`${section.title} ${section.demos.length}`, () =>
-        node.scrollIntoView({ behavior: 'smooth', block: 'start' }),
-      );
-      link.classList.add('quiet');
-      return el('li', {}, link);
-    }),
-  );
-
-  filterHome = (query) => {
-    const found = new Set(searchDemos(query));
-    for (const { node, cards } of sections) {
-      let shown = 0;
-      for (const card of cards) {
-        card.node.hidden = !found.has(card.demo);
-        if (!card.node.hidden) shown++;
-      }
-      node.hidden = shown === 0;
-    }
-    count.textContent = query.trim()
-      ? `${found.size} of ${ALL_DEMOS.length} demos match "${query.trim()}".`
-      : '';
-    const url = `${window.location.pathname}${window.location.search}#/${
-      query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ''
-    }`;
-    window.history.replaceState(null, '', url);
-  };
-
-  root.append(
-    el('h1', { text: SITE_TITLE }),
-    el('p', {
-      class: 'lede',
-      text: `${ALL_DEMOS.length} interactive demos. Each one shows an algorithm working, with the controls to slow it down, step through it and change its input.`,
-    }),
-    jump,
-    count,
-    ...sections.map((s) => s.node),
-  );
-
-  const query = hashParams().get('q') ?? '';
-  search.value = query;
-  if (query) filterHome(query);
-  return () => {
-    filterHome = () => {};
-  };
-}
+/** Set while the home page is showing: there the index itself is the result list. */
+let home: Home | undefined;
 
 // --- Demo page chrome ---
+
+/** Copies the address, which already holds the demo's settings and input. */
+function copyLinkButton(): HTMLButtonElement {
+  const copy = button('Copy link', () => {
+    // Wait a moment for a pending write of the settings into the URL.
+    window.setTimeout(() => {
+      navigator.clipboard?.writeText(window.location.href).then(
+        () => flash('Copied'),
+        () => flash('Copy failed'),
+      );
+    }, 250);
+  });
+  copy.classList.add('quiet');
+  const flash = (text: string) => {
+    copy.textContent = text;
+    window.setTimeout(() => (copy.textContent = 'Copy link'), 1500);
+  };
+  return copy;
+}
 
 function demoFooter(entry: DemoEntry): HTMLElement {
   const index = ALL_DEMOS.indexOf(entry);
@@ -279,22 +230,32 @@ async function route() {
 
   cleanup?.();
   cleanup = undefined;
+  home = undefined;
   main.replaceChildren();
   openResults(false);
-  document.title = entry ? `${entry.title} · ${SITE_TITLE}` : SITE_TITLE;
+  const missing = !entry && hashRoute() !== '';
+  document.title = entry
+    ? `${entry.title} · ${SITE_TITLE}`
+    : missing
+      ? `Not found · ${SITE_TITLE}`
+      : SITE_TITLE;
 
-  if (!entry) {
-    cleanup = mountHome(main);
+  if (missing) {
+    search.value = '';
+    mountNotFound(main, hashRoute());
+  } else if (!entry) {
+    const query = hashParams().get('q') ?? '';
+    search.value = query;
+    home = mountHome(main, query);
   } else {
     search.value = '';
     const section = sectionOf(entry.id);
     main.append(
       el(
-        'p',
+        'div',
         { class: 'crumbs' },
-        el('a', { href: '#/', text: 'All demos' }),
-        ' / ',
-        section?.title ?? '',
+        el('p', {}, el('a', { href: '#/', text: 'All demos' }), ' / ', section?.title ?? ''),
+        copyLinkButton(),
       ),
     );
     const body = el('div');

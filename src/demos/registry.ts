@@ -59,12 +59,21 @@ export function sectionOf(id: string): Section | undefined {
   return SECTIONS.find((s) => s.demos.some((d) => d.id === id));
 }
 
+/** What the search reads for each demo, lower-cased once: the search runs on every keystroke. */
+const HAYSTACK = new Map(
+  SECTIONS.flatMap((section) =>
+    section.demos.map(
+      (demo) =>
+        [
+          demo,
+          `${demo.title} ${demo.summary} ${demo.keywords ?? ''} ${section.title}`.toLowerCase(),
+        ] as const,
+    ),
+  ),
+);
+
 /** Demos matching every word of the query, in index order. An empty query matches all. */
 export function searchDemos(query: string): DemoEntry[] {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-  return ALL_DEMOS.filter((demo) => {
-    const section = sectionOf(demo.id)?.title ?? '';
-    const text = `${demo.title} ${demo.summary} ${demo.keywords ?? ''} ${section}`.toLowerCase();
-    return words.every((word) => text.includes(word));
-  });
+  return ALL_DEMOS.filter((demo) => words.every((word) => HAYSTACK.get(demo)?.includes(word)));
 }

@@ -1,4 +1,4 @@
-import { button, el } from '../ui/dom';
+import { el } from '../ui/dom';
 
 /** Builds a demo inside `root` and returns a function that tears it down. */
 export type Mount = (root: HTMLElement, entry: DemoEntry) => () => void;
@@ -39,28 +39,16 @@ export function buildLayout(root: HTMLElement, entry: DemoEntry, canvasLabel: st
   panel.addEventListener('submit', (event) => event.preventDefault());
   const stage = el('div', { class: 'stage' }, canvas);
   const readout = el('div', { class: 'readout' });
-  const about = el('section', { class: 'about', 'aria-label': 'How it works' });
-
-  const copy = button('Copy link', () => {
-    // The URL already holds the demo's settings; wait a moment for a pending write.
-    window.setTimeout(() => {
-      navigator.clipboard?.writeText(window.location.href).then(
-        () => flash('Copied'),
-        () => flash('Copy failed'),
-      );
-    }, 250);
-  });
-  copy.classList.add('quiet');
-  const flash = (text: string) => {
-    copy.textContent = text;
-    window.setTimeout(() => (copy.textContent = 'Copy link'), 1500);
-  };
+  const about = el(
+    'section',
+    { class: 'about', 'aria-label': 'How it works' },
+    el('h2', { text: 'How it works' }),
+  );
 
   root.append(
-    el('div', { class: 'title-row' }, el('h1', { text: entry.title }), copy),
+    el('h1', { text: entry.title }),
     el('p', { class: 'lede', text: entry.summary }),
-    el('div', { class: 'demo' }, el('div', {}, stage, readout), panel),
-    about,
+    el('div', { class: 'demo' }, el('div', { class: 'view' }, stage, readout), panel, about),
   );
   return { canvas, stage, readout, panel, about };
 }

@@ -5,19 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Interactive demos of sorting, graph, geometry, signal, data-structure, string and simulation algorithms."
+      content="Forty-four interactive demos of sorting, graph, geometry, signal, data-structure, string and simulation algorithms. Play, pause, step and change the input."
     />
     <meta name="color-scheme" content="light dark" />
-    <title>Visual algorithms</title>
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='none' stroke='%232f6f6a' stroke-width='2'/%3E%3Ccircle cx='12.2' cy='3.8' r='2' fill='%232f6f6a'/%3E%3C/svg%3E"
+    <meta name="theme-color" content="#f6f5f1" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Visual algorithms" />
+    <meta
+      property="og:description"
+      content="Forty-four interactive demos, each showing one algorithm at work."
     />
+    <meta property="og:image" content="og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <title>Visual algorithms</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link
+      rel="preload"
+      href="/src/fonts/ibm-plex-sans-latin-wght-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <script>
+      // Before first paint, so a stored theme does not flash the other one.
+      try {
+        const theme = localStorage.getItem('theme');
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+      } catch {
+        // Storage is blocked: the system theme applies.
+      }
+    </script>
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
     <header class="site-header">
-      <a class="site-title" href="#/">Visual algorithms</a>
+      <a class="site-title" href="#/">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <circle cx="7.4" cy="8.6" r="5" fill="none" stroke="currentColor" stroke-width="1.8" />
+          <circle cx="11.4" cy="4.6" r="2.1" fill="currentColor" />
+        </svg>
+        Visual algorithms
+      </a>
       <div id="tools" class="tools"></div>
     </header>
     <main id="main" tabindex="-1"></main>
