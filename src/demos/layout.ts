@@ -11,6 +11,8 @@ export interface Demo {
 
 export interface DemoLayout {
   canvas: HTMLCanvasElement;
+  /** Space directly under the canvas for readouts. Empty by default. */
+  readout: HTMLElement;
   panel: HTMLElement;
   about: HTMLElement;
 }
@@ -20,14 +22,20 @@ export function buildLayout(root: HTMLElement, demo: Demo, canvasLabel: string):
   const canvas = el('canvas', { role: 'img', 'aria-label': canvasLabel });
   const panel = el('form', { class: 'panel', 'aria-label': 'Controls' });
   panel.addEventListener('submit', (event) => event.preventDefault());
+  const readout = el('div', { class: 'readout' });
   const about = el('section', { class: 'about', 'aria-label': 'How it works' });
   root.append(
     el('h1', { text: demo.title }),
     el('p', { class: 'lede', text: demo.summary }),
-    el('div', { class: 'demo' }, el('div', { class: 'stage' }, canvas), panel),
+    el(
+      'div',
+      { class: 'demo' },
+      el('div', {}, el('div', { class: 'stage' }, canvas), readout),
+      panel,
+    ),
     about,
   );
-  return { canvas, panel, about };
+  return { canvas, readout, panel, about };
 }
 
 /** Builds a paragraph from text with `code` spans marked by backticks. */

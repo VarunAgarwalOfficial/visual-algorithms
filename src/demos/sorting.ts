@@ -19,7 +19,7 @@ function describe(step: Step | undefined): string {
 }
 
 function mount(root: HTMLElement): () => void {
-  const { canvas, panel, about } = buildLayout(
+  const { canvas, readout, panel, about } = buildLayout(
     root,
     sorting,
     'Bar chart of the array being sorted. The bars in use are highlighted.',
@@ -113,9 +113,9 @@ function mount(root: HTMLElement): () => void {
     progress.textContent = `${cursor} / ${steps.length}`;
     scrub.set(cursor);
     status.textContent = done ? 'Sorted.' : describe(steps[cursor - 1]);
-    stepButton.disabled = done;
-    backButton.disabled = cursor === 0;
-    playButton.disabled = done;
+    stepButton.setAttribute('aria-disabled', String(done));
+    backButton.setAttribute('aria-disabled', String(cursor === 0));
+    if (!playing) playButton.textContent = done && steps.length > 0 ? 'Replay' : 'Play';
   }
 
   // --- Controls ---
@@ -129,7 +129,14 @@ function mount(root: HTMLElement): () => void {
   const caption = el('p', { class: 'note' });
 
   let playing = false;
-  const playButton = button('Play', () => setPlaying(!playing), 'primary');
+  const playButton = button(
+    'Play',
+    () => {
+      if (!playing && cursor >= steps.length) seek(0);
+      setPlaying(!playing);
+    },
+    'primary',
+  );
   const stepButton = button('Step', () => {
     setPlaying(false);
     advance(1);
@@ -145,7 +152,11 @@ function mount(root: HTMLElement): () => void {
 
   function setPlaying(on: boolean) {
     playing = on && cursor < steps.length;
-    playButton.textContent = playing ? 'Pause' : 'Play';
+    playButton.textContent = playing
+      ? 'Pause'
+      : cursor >= steps.length && cursor > 0
+        ? 'Replay'
+        : 'Play';
     status.setAttribute('aria-live', playing ? 'off' : 'polite');
     budget = 0;
     if (playing) loop.start();
@@ -234,23 +245,19 @@ function mount(root: HTMLElement): () => void {
       el('div', { class: 'buttons' }, playButton, stepButton, backButton, resetButton),
       scrub.root,
     ),
-    fieldset(
-      'Counts',
-      el(
-        'dl',
-        { class: 'stats' },
-        el('dt', { text: 'Comparisons' }),
-        comparisons,
-        el('dt', { text: 'Swaps' }),
-        swaps,
-        el('dt', { text: 'Writes' }),
-        writes,
-        el('dt', { text: 'Step' }),
-        progress,
-      ),
-      status,
-      legend,
+  );
+
+  readout.append(
+    el(
+      'dl',
+      { class: 'stats' },
+      el('div', {}, el('dt', { text: 'Comparisons' }), comparisons),
+      el('div', {}, el('dt', { text: 'Swaps' }), swaps),
+      el('div', {}, el('dt', { text: 'Writes' }), writes),
+      el('div', {}, el('dt', { text: 'Step' }), progress),
     ),
+    status,
+    legend,
   );
 
   about.append(
