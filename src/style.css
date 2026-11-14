@@ -579,7 +579,7 @@ button[aria-pressed='true'] {
 }
 
 .readout .note {
-  flex: 1 1 14rem;
+  flex: 1 1 100%;
 }
 
 .stats {
