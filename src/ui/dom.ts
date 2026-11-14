@@ -108,3 +108,27 @@ export function button(label: string, onClick: () => void, className = ''): HTML
 export function fieldset(legend: string, ...children: Child[]): HTMLFieldSetElement {
   return el('fieldset', {}, el('legend', { text: legend }), ...children);
 }
+
+/** A labelled single-line text box. `onChange` fires as the user types. */
+export function textInput(options: {
+  label: string;
+  value: string;
+  maxLength?: number;
+  placeholder?: string;
+  onChange: (value: string) => void;
+}): { root: HTMLElement; input: HTMLInputElement } {
+  const id = uid('text');
+  const input = el('input', {
+    id,
+    type: 'text',
+    value: options.value,
+    autocomplete: 'off',
+    autocapitalize: 'off',
+    spellcheck: 'false',
+  });
+  if (options.maxLength) input.maxLength = options.maxLength;
+  if (options.placeholder) input.placeholder = options.placeholder;
+  input.addEventListener('input', () => options.onChange(input.value));
+  const root = el('div', { class: 'field' }, el('label', { for: id, text: options.label }), input);
+  return { root, input };
+}

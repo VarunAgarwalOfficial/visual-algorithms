@@ -1,48 +1,44 @@
 :root {
   color-scheme: light dark;
 
-  --bg: #f6f5f1;
-  --surface: #ffffff;
-  --ink: #1d1f21;
-  --muted: #62676d;
-  --border: #dcdad3;
-  --accent: #2f6f6a;
-  --accent-ink: #ffffff;
-  --focus: #1c5fd4;
+  --bg: light-dark(#f6f5f1, #141617);
+  --surface: light-dark(#ffffff, #1c1f21);
+  --ink: light-dark(#1d1f21, #e8e6e1);
+  --muted: light-dark(#62676d, #a0a5aa);
+  --border: light-dark(#dcdad3, #33383c);
+  --accent: light-dark(#2f6f6a, #6fbfb6);
+  --accent-ink: light-dark(#ffffff, #0f1516);
+  --focus: light-dark(#1c5fd4, #8ab4ff);
 
-  /* Canvas palette, read by the demos. */
-  --canvas-bg: #ffffff;
-  --canvas-ink: #1d1f21;
-  --canvas-muted: #9aa0a6;
-  --canvas-faint: #e3e1da;
-  --canvas-accent: #2f6f6a;
-  --canvas-compare: #d98a00;
-  --canvas-change: #c8452f;
+  /* Canvas palette, read by the demos through ui/theme.ts. */
+  --canvas-bg: light-dark(#ffffff, #1c1f21);
+  --canvas-ink: light-dark(#1d1f21, #e8e6e1);
+  --canvas-muted: light-dark(#9aa0a6, #767c82);
+  --canvas-faint: light-dark(#e3e1da, #2e3336);
+  --canvas-accent: light-dark(#2f6f6a, #6fbfb6);
+  --canvas-compare: light-dark(#d98a00, #f0b03f);
+  --canvas-change: light-dark(#c8452f, #f0705a);
+  --canvas-good: light-dark(#3d8a3d, #7fc97f);
+  --canvas-visit: light-dark(#a9c4e6, #2f4a66);
+  --canvas-series-1: light-dark(#2f6f6a, #6fbfb6);
+  --canvas-series-2: light-dark(#c8452f, #f0705a);
+  --canvas-series-3: light-dark(#3b6fb5, #7aa7e0);
+  --canvas-series-4: light-dark(#d98a00, #f0b03f);
+  --canvas-series-5: light-dark(#7a4fa3, #b592d6);
+  --canvas-series-6: light-dark(#5c7a1f, #a3c25a);
 
   --radius: 6px;
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #141617;
-    --surface: #1c1f21;
-    --ink: #e8e6e1;
-    --muted: #a0a5aa;
-    --border: #33383c;
-    --accent: #6fbfb6;
-    --accent-ink: #0f1516;
-    --focus: #8ab4ff;
+/* The theme button overrides the system scheme. */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
 
-    --canvas-bg: #1c1f21;
-    --canvas-ink: #e8e6e1;
-    --canvas-muted: #767c82;
-    --canvas-faint: #2e3336;
-    --canvas-accent: #6fbfb6;
-    --canvas-compare: #f0b03f;
-    --canvas-change: #f0705a;
-  }
+:root[data-theme='dark'] {
+  color-scheme: dark;
 }
 
 *,
@@ -106,30 +102,152 @@ a {
   text-decoration: none;
 }
 
-.site-header ul {
+.tools {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem 1.25rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.site-header nav a {
-  display: inline-block;
-  padding: 0.25rem 0;
+.search {
+  position: relative;
+}
+
+.search input {
+  width: min(16rem, 60vw);
+  min-height: 2.25rem;
+  padding: 0.35rem 0.75rem;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.results {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  width: min(20rem, 90vw);
+  max-height: min(70vh, 30rem);
+  overflow-y: auto;
+  padding: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
+}
+
+.results-heading {
+  margin: 0.5rem 0.5rem 0.15rem;
   color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.results a {
+  display: block;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
   text-decoration: none;
-  border-bottom: 2px solid transparent;
 }
 
-.site-header nav a:hover {
+.results a:hover,
+.results a[aria-selected='true'] {
+  background: var(--bg);
+  outline: 1px solid var(--border);
+}
+
+button.quiet {
+  min-height: 2.25rem;
+  background: transparent;
+  color: var(--muted);
+}
+
+button.quiet:hover {
   color: var(--ink);
 }
 
-.site-header nav a[aria-current='page'] {
+.help {
+  max-width: min(26rem, 92vw);
+  padding: 1.25rem;
+  background: var(--surface);
   color: var(--ink);
-  border-bottom-color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.help::backdrop {
+  background: rgb(0 0 0 / 0.4);
+}
+
+.help h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.help dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+
+.help dt {
+  font-family: var(--mono);
+  color: var(--muted);
+}
+
+.help dd {
+  margin: 0;
+}
+
+.crumbs {
+  margin: 1.25rem 0 -1.25rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.95rem;
+}
+
+.pager a {
+  text-decoration: none;
+}
+
+.pager a:hover {
+  color: var(--accent);
+}
+
+.pager .next {
+  text-align: right;
+}
+
+.pager span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.75rem;
 }
 
 .site-footer {
@@ -161,10 +279,50 @@ h1 {
 
 /* Home */
 
+.jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.jump button {
+  min-height: 1.9rem;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.82rem;
+}
+
+.group {
+  margin-top: 2rem;
+  scroll-margin-top: 1rem;
+}
+
+.group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.group-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+
+.group-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.75rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -173,7 +331,7 @@ h1 {
 .card {
   display: block;
   height: 100%;
-  padding: 1.1rem 1.25rem 1.25rem;
+  padding: 0.85rem 1rem 1rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -184,15 +342,19 @@ h1 {
   border-color: var(--accent);
 }
 
-.card h2 {
-  margin: 0 0 0.35rem;
-  font-size: 1.05rem;
+.card h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
 }
 
 .card p {
   margin: 0;
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: 0.875rem;
+}
+
+[hidden] {
+  display: none !important;
 }
 
 /* Demo layout */
@@ -229,6 +391,12 @@ h1 {
 .stage canvas.drawing {
   cursor: crosshair;
   touch-action: none;
+}
+
+/* Set by ui/pointer.ts: a finger on the canvas works the demo instead of scrolling. */
+.stage canvas.interactive {
+  touch-action: none;
+  cursor: pointer;
 }
 
 .panel {
@@ -304,6 +472,19 @@ input[type='range'] {
   height: 1rem;
   margin: 0;
   accent-color: var(--accent);
+}
+
+input[type='text'],
+input[type='number'],
+textarea {
+  width: 100%;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.6rem;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font: 0.9rem var(--mono);
 }
 
 select,
@@ -457,6 +638,17 @@ button[aria-pressed='true'] {
 .about code {
   font: 0.9em var(--mono);
   color: var(--ink);
+}
+
+.formula {
+  margin: 0 0 0.6rem;
+  padding: 0.5rem 0.75rem;
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--ink);
+  font: 0.85rem/1.5 var(--mono);
 }
 
 .sr-only {

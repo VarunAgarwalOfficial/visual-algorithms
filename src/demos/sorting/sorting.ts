@@ -1,15 +1,13 @@
-import { ALGORITHMS, getAlgorithm, type AlgorithmId } from '../core/sorting/algorithms';
-import { INPUT_KINDS, makeInput, type InputKind } from '../core/sorting/inputs';
-import { applyStep, replay, tally, type Counts, type Step } from '../core/sorting/trace';
-import { createLoop, createStage } from '../ui/canvas';
-import { button, el, fieldset, select, slider } from '../ui/dom';
-import { watchPalette } from '../ui/theme';
-import { buildLayout, prose, type Demo } from './layout';
-
-const MAX_STEPS_PER_SECOND = 2000;
-
-/** Maps the 0..100 speed slider to steps per second on a log scale (1 to 2000). */
-const stepsPerSecond = (slider: number) => Math.round(MAX_STEPS_PER_SECOND ** (slider / 100));
+import { ALGORITHMS, getAlgorithm, type AlgorithmId } from '../../core/sorting/algorithms';
+import { INPUT_KINDS, makeInput, type InputKind } from '../../core/sorting/inputs';
+import { newSeed, seeded } from '../../core/random';
+import { applyStep, replay, tally, type Counts, type Step } from '../../core/sorting/trace';
+import { createStage } from '../../ui/canvas';
+import { button, el, fieldset, select, slider } from '../../ui/dom';
+import { tracePlayer } from '../../ui/player';
+import { watchPalette } from '../../ui/theme';
+import { urlState } from '../../ui/url';
+import { buildLayout, legend, prose, stats, type Mount } from '../layout';
 
 function describe(step: Step | undefined): string {
   if (!step) return 'Ready.';
@@ -18,63 +16,67 @@ function describe(step: Step | undefined): string {
   return `Write ${step.value} to position ${step.i + 1}.`;
 }
 
-function mount(root: HTMLElement): () => void {
+export const mount: Mount = (root, entry) => {
   const { canvas, readout, panel, about } = buildLayout(
     root,
-    sorting,
+    entry,
     'Bar chart of the array being sorted. The bars in use are highlighted.',
   );
 
-  let algorithmId: AlgorithmId = 'quick';
-  let inputKind: InputKind = 'random';
-  let size = 48;
-  let speed = 45;
+  const url = urlState({ alg: 'quick', input: 'random', n: 48, seed: 1, speed: 60 });
+  const settings = url.state;
+  settings.n = Math.max(4, Math.min(256, Math.round(settings.n)));
+  const algorithmId = () => getAlgorithm(settings.alg).id;
+  const inputKind = (): InputKind =>
+    INPUT_KINDS.find((k) => k.id === settings.input)?.id ?? 'random';
 
   let input: number[] = [];
   let steps: Step[] = [];
   let array: number[] = [];
-  let cursor = 0; // number of steps applied
+  let cursor = 0; // number of steps applied to `array`
   let counts: Counts = { comparisons: 0, swaps: 0, writes: 0 };
-  let budget = 0; // fractional steps carried between frames
 
   const theme = watchPalette(() => draw());
   const stage = createStage(canvas, () => draw());
-  const loop = createLoop((dt) => {
-    budget += dt * stepsPerSecond(speed);
-    const whole = Math.floor(budget);
-    budget -= whole;
-    advance(whole);
-    if (cursor >= steps.length) setPlaying(false);
+  const player = tracePlayer({
+    speed: settings.speed,
+    maxSpeed: 2000,
+    onSpeed(value) {
+      settings.speed = value;
+      url.save();
+    },
+    render(position) {
+      if (position >= cursor) {
+        // Forwards: apply only the new steps.
+        for (; cursor < position; cursor++) {
+          applyStep(array, steps[cursor]);
+          tally(counts, steps[cursor], 1);
+        }
+      } else {
+        // Backwards: replay from the start.
+        ({ array, counts } = replay(input, steps, position));
+        cursor = position;
+      }
+      update();
+    },
   });
 
   // --- Model ---
 
   function newInput() {
-    input = makeInput(inputKind, size, Math.random);
+    input = makeInput(inputKind(), settings.n, seeded(settings.seed));
     retrace();
   }
 
   function retrace() {
-    steps = getAlgorithm(algorithmId).sort(input).steps;
-    scrub.input.max = String(steps.length);
-    seek(0);
-    setPlaying(false);
-  }
-
-  function advance(count: number) {
-    const end = Math.min(steps.length, cursor + count);
-    for (; cursor < end; cursor++) {
-      applyStep(array, steps[cursor]);
-      tally(counts, steps[cursor], 1);
-    }
-    update();
-  }
-
-  /** Jumps to any point in the trace by replaying from the start. */
-  function seek(position: number) {
-    cursor = Math.max(0, Math.min(steps.length, position));
-    ({ array, counts } = replay(input, steps, cursor));
-    update();
+    steps = getAlgorithm(settings.alg).sort(input).steps;
+    array = [...input];
+    cursor = 0;
+    counts = { comparisons: 0, swaps: 0, writes: 0 };
+    const algorithm = getAlgorithm(settings.alg);
+    caption.textContent = `${algorithm.summary} ${algorithm.complexity}.`;
+    player.setLength(steps.length);
+    url.save();
   }
 
   // --- Rendering ---
@@ -106,163 +108,68 @@ function mount(root: HTMLElement): () => void {
 
   function update() {
     draw();
-    const done = cursor >= steps.length;
-    comparisons.textContent = String(counts.comparisons);
-    swaps.textContent = String(counts.swaps);
-    writes.textContent = String(counts.writes);
-    progress.textContent = `${cursor} / ${steps.length}`;
-    scrub.set(cursor);
-    status.textContent = done ? 'Sorted.' : describe(steps[cursor - 1]);
-    stepButton.setAttribute('aria-disabled', String(done));
-    backButton.setAttribute('aria-disabled', String(cursor === 0));
-    if (!playing) playButton.textContent = done && steps.length > 0 ? 'Replay' : 'Play';
+    counters.set({ comparisons: counts.comparisons, swaps: counts.swaps, writes: counts.writes });
+    status.textContent = cursor >= steps.length ? 'Sorted.' : describe(steps[cursor - 1]);
   }
 
   // --- Controls ---
 
-  const comparisons = el('dd');
-  const swaps = el('dd');
-  const writes = el('dd');
-  const progress = el('dd');
-  // Announced only while stepping by hand; during playback it would be noise.
-  const status = el('p', { class: 'note', 'aria-live': 'off' });
+  const counters = stats({ comparisons: 'Comparisons', swaps: 'Swaps', writes: 'Writes' });
+  const status = el('p', { class: 'note' });
   const caption = el('p', { class: 'note' });
-
-  let playing = false;
-  const playButton = button(
-    'Play',
-    () => {
-      if (!playing && cursor >= steps.length) seek(0);
-      setPlaying(!playing);
-    },
-    'primary',
-  );
-  const stepButton = button('Step', () => {
-    setPlaying(false);
-    advance(1);
-  });
-  const backButton = button('Back', () => {
-    setPlaying(false);
-    seek(cursor - 1);
-  });
-  const resetButton = button('Reset', () => {
-    setPlaying(false);
-    seek(0);
-  });
-
-  function setPlaying(on: boolean) {
-    playing = on && cursor < steps.length;
-    playButton.textContent = playing
-      ? 'Pause'
-      : cursor >= steps.length && cursor > 0
-        ? 'Replay'
-        : 'Play';
-    status.setAttribute('aria-live', playing ? 'off' : 'polite');
-    budget = 0;
-    if (playing) loop.start();
-    else loop.stop();
-  }
-
-  const scrub = slider({
-    label: 'Position',
-    min: 0,
-    max: 1,
-    value: 0,
-    onInput(value) {
-      setPlaying(false);
-      seek(value);
-    },
-  });
-
-  function describeAlgorithm() {
-    const algorithm = getAlgorithm(algorithmId);
-    caption.textContent = `${algorithm.summary} ${algorithm.complexity}.`;
-  }
-
-  const algorithmSelect = select<AlgorithmId>({
-    label: 'Algorithm',
-    options: ALGORITHMS,
-    value: algorithmId,
-    onChange(id) {
-      algorithmId = id;
-      retrace();
-      describeAlgorithm();
-      update();
-    },
-  });
-
-  const inputSelect = select<InputKind>({
-    label: 'Starting order',
-    options: INPUT_KINDS,
-    value: inputKind,
-    onChange(kind) {
-      inputKind = kind;
-      regenerate();
-    },
-  });
-
-  function regenerate() {
-    newInput();
-    describeAlgorithm();
-    update();
-  }
-
-  const legend = el(
-    'ul',
-    { class: 'legend' },
-    el('li', { style: '--swatch: var(--canvas-compare)', text: 'Compared' }),
-    el('li', { style: '--swatch: var(--canvas-change)', text: 'Moved' }),
-  );
 
   panel.append(
     fieldset(
       'Sort',
-      algorithmSelect.root,
+      select<AlgorithmId>({
+        label: 'Algorithm',
+        options: ALGORITHMS,
+        value: algorithmId(),
+        onChange(id) {
+          settings.alg = id;
+          retrace();
+        },
+      }).root,
       caption,
-      inputSelect.root,
+      select<InputKind>({
+        label: 'Starting order',
+        options: INPUT_KINDS,
+        value: inputKind(),
+        onChange(kind) {
+          settings.input = kind;
+          newInput();
+        },
+      }).root,
       slider({
         label: 'Size',
         min: 4,
         max: 256,
-        value: size,
+        value: settings.n,
         onInput(value) {
-          size = value;
-          regenerate();
+          settings.n = value;
+          newInput();
         },
       }).root,
-      button('New array', regenerate),
+      button('New array', () => {
+        settings.seed = newSeed();
+        newInput();
+      }),
     ),
-    fieldset(
-      'Playback',
-      slider({
-        label: 'Speed',
-        min: 0,
-        max: 100,
-        value: speed,
-        format: (v) => `${stepsPerSecond(v)} steps/s`,
-        onInput: (value) => (speed = value),
-      }).root,
-      el('div', { class: 'buttons' }, playButton, stepButton, backButton, resetButton),
-      scrub.root,
-    ),
+    player.root,
   );
 
   readout.append(
-    el(
-      'dl',
-      { class: 'stats' },
-      el('div', {}, el('dt', { text: 'Comparisons' }), comparisons),
-      el('div', {}, el('dt', { text: 'Swaps' }), swaps),
-      el('div', {}, el('dt', { text: 'Writes' }), writes),
-      el('div', {}, el('dt', { text: 'Step' }), progress),
-    ),
+    counters.root,
     status,
-    legend,
+    legend([
+      ['var(--canvas-compare)', 'Compared'],
+      ['var(--canvas-change)', 'Moved'],
+    ]),
   );
 
   about.append(
     prose(
-      'Each algorithm runs once up front and records every comparison, swap and write. Playback moves a cursor through that list, so you can pause, step either way, or drag the position slider.',
+      'Each algorithm runs once up front and records every comparison, swap and write. Playback moves a cursor through that list, so you can pause, step either way, or drag the step slider.',
     ),
     prose(
       'Comparisons and moves are counted separately because they cost differently. Selection sort compares a lot but swaps at most `n − 1` times; merge sort never swaps, it copies values back from a buffer, counted as writes.',
@@ -273,19 +180,10 @@ function mount(root: HTMLElement): () => void {
   );
 
   newInput();
-  describeAlgorithm();
-  update();
 
   return () => {
-    loop.stop();
+    player.dispose();
     stage.dispose();
     theme.dispose();
   };
-}
-
-export const sorting: Demo = {
-  id: 'sorting',
-  title: 'Sorting',
-  summary: 'Six sorting algorithms, one step at a time, with every comparison and move counted.',
-  mount,
 };
