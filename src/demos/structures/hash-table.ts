@@ -85,13 +85,13 @@ export const mount: Mount = (root, entry) => {
     const chained = scheme() === 'chain';
     const box = { x: pad, y: pad + 4, w: width - 2 * pad, h: height - 2 * pad - 4 };
     if (!chained) {
-      const probe = cellGrid(frame.m, box, 26, 52);
+      const probe = cellGrid(frame.m, box, 26, 64);
       // Centre the block of rows vertically.
       const grid = cellGrid(
         frame.m,
         { ...box, y: box.y + Math.max(0, (box.h - probe.height) / 2) },
         26,
-        52,
+        64,
       );
       drawCells(
         g,

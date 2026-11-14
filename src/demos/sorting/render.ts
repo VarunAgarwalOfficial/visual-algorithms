@@ -91,7 +91,7 @@ export function drawSort(
     return last.type === 'compare' || last.type === 'read' ? palette.compare : palette.change;
   };
   const base = (i: number) =>
-    done ? palette.accent : group[i] >= 0 ? tints[group[i]] : palette.muted;
+    done ? palette.good : group[i] >= 0 ? tints[group[i]] : palette.muted;
 
   if (mode === 'wheel') {
     drawWheel(

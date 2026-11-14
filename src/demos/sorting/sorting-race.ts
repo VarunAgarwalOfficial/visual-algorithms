@@ -213,7 +213,8 @@ export const mount: Mount = (root, entry) => {
     legend([
       ['var(--canvas-compare)', 'Compared or read'],
       ['var(--canvas-change)', 'Swapped or written'],
-      ['var(--canvas-accent)', 'Sorted, and bucket tallies'],
+      ['var(--canvas-good)', 'Sorted'],
+      ['var(--canvas-accent)', 'Bucket tallies'],
     ]),
   );
 

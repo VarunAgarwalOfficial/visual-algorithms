@@ -226,7 +226,8 @@ export const mount: Mount = (root, entry) => {
         'color-mix(in srgb, var(--canvas-series-1) 60%, var(--canvas-bg))',
         'Range or run in work (one colour each)',
       ],
-      ['var(--canvas-accent)', 'Sorted, and bucket tallies'],
+      ['var(--canvas-good)', 'Sorted'],
+      ['var(--canvas-accent)', 'Bucket tallies'],
     ]),
   );
 
