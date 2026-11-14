@@ -12,7 +12,7 @@ import { tracePlayer } from '../../ui/player';
 import { canvasPoint } from '../../ui/pointer';
 import { hexToRgb, isDark, prefersReducedMotion, watchPalette } from '../../ui/theme';
 import { hashParams, urlState } from '../../ui/url';
-import { buildLayout, formula, prose, stats, type Mount } from '../layout';
+import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import type { BandRequest, BandResult } from './mandelbrot.worker';
 import { FONT } from '../../ui/font';
 
@@ -152,6 +152,11 @@ export const mount: Mount = (root, entry) => {
   let zoomHandle = 0;
   let insetHandle = 0;
   let lut = new Uint32Array(1);
+  const key = legend([
+    ['transparent', 'Steps taken to escape, few to many'],
+    ['transparent', 'Never escapes: in the set'],
+  ]);
+  key.firstElementChild?.classList.add('range');
   let insideColour = 0;
   let disposed = false;
 
@@ -369,6 +374,13 @@ export const mount: Mount = (root, entry) => {
     const inside =
       settings.pal === 'classic' ? [0, 0, 0] : dark ? [10, 12, 13] : hexToRgb(palette.ink);
     insideColour = pack(inside);
+
+    // The colour key under the picture follows the palette in use.
+    const css = (c: number) => `rgb(${c & 255} ${(c >> 8) & 255} ${(c >> 16) & 255})`;
+    const stops = Array.from({ length: 8 }, (_, i) => css(lut[Math.round(((size - 1) * i) / 7)]));
+    const [escapes, stays] = key.children as HTMLCollectionOf<HTMLElement>;
+    escapes.style.setProperty('--swatch', `linear-gradient(90deg, ${stops.join(', ')})`);
+    stays.style.setProperty('--swatch', css(insideColour));
   }
 
   /** Colours rows of a frame for the iteration count the player is at. */
@@ -841,7 +853,7 @@ export const mount: Mount = (root, entry) => {
     player.root,
   );
 
-  readout.append(counters.root, status, detail);
+  readout.append(counters.root, status, detail, key);
 
   about.append(
     prose(
