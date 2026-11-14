@@ -10,7 +10,7 @@ export interface Stage {
 /**
  * Keeps a canvas's backing store matched to its CSS size and the device pixel
  * ratio, and scales the context so drawing code can use CSS pixels.
- * `onResize` runs after every size change, with the previous size.
+ * `onResize` runs after every later size change, with the previous size.
  */
 export function createStage(
   canvas: HTMLCanvasElement,
@@ -21,7 +21,7 @@ export function createStage(
 
   const stage: Stage = { canvas, ctx, width: 0, height: 0, dispose: () => observer.disconnect() };
 
-  const resize = () => {
+  const resize = (notify: boolean) => {
     const width = Math.max(1, Math.round(canvas.clientWidth));
     const height = Math.max(1, Math.round(canvas.clientHeight));
     const ratio = window.devicePixelRatio || 1;
@@ -36,12 +36,13 @@ export function createStage(
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     stage.width = width;
     stage.height = height;
-    onResize(previous[0], previous[1]);
+    if (notify) onResize(previous[0], previous[1]);
   };
 
-  const observer = new ResizeObserver(resize);
+  const observer = new ResizeObserver(() => resize(true));
   observer.observe(canvas);
-  resize();
+  // Size once up front, silently: the caller is still being constructed.
+  resize(false);
   return stage;
 }
 
