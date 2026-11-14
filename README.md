@@ -4,6 +4,8 @@ Forty-four interactive demos on one static site: sorting, graphs and
 pathfinding, geometry, signals and maths, data structures, dynamic programming
 and strings, and simulation. TypeScript, canvas, no runtime dependencies.
 
+![The home page: demos grouped by section, each with a thumbnail](docs/home.png)
+
 The idea is the one the first three demos had: do not show an algorithm's
 answer, show it working. Every demo can be played, paused, stepped forwards and
 backwards and slowed down, counts the work it does, and takes input you can
@@ -34,6 +36,13 @@ The three original ideas are described below.
   `R` reset, `[` `]` slower and faster, `N` `P` next and previous demo, `T`
   theme, `H` home, `?` the list.
 - The theme follows the system, or can be forced light or dark.
+- A link reproduces a simulation on any screen: boids, collisions and cloth run
+  in a fixed 800 × 600 world that is scaled to fit. Painted walls, drawn cells
+  and cloth cuts are in the link. Things done by hand to a running simulation
+  (dragging cloth, flinging a disc, stirring the fluid) are not, and each of
+  those demos says so.
+- An address that names no demo shows a not-found page with near matches;
+  `404.html` does the same job for a static host.
 
 ## How it is built
 
@@ -101,6 +110,30 @@ sorts differ mostly in how many swaps they make, merge sort makes none because
 it copies values back from a buffer, and counting and radix sort never compare
 at all.
 
+## The look
+
+One stylesheet, `src/style.css`, holds the whole visual system as custom
+properties: a five-step type scale (12, 14, 16, 20, 28 px), a seven-step spacing
+scale (4 to 48 px), one control height (40 px, 44 px on a phone), and one palette
+with light and dark values. Canvas colours come from the same file through
+`src/ui/theme.ts`, and mean the same thing in every demo:
+
+| Colour | Meaning                                |
+| ------ | -------------------------------------- |
+| amber  | being read or compared                 |
+| red    | being written, moved or rejected       |
+| green  | finished, found, or part of the answer |
+| blue   | already explored                       |
+| teal   | the current item, and the site accent  |
+
+Text is set in IBM Plex Sans and IBM Plex Mono, bundled in `src/fonts` under the
+SIL Open Font License (`src/fonts/OFL.txt`), so pages and canvas labels look the
+same on every machine. Only the Latin subset is bundled; a few mathematical
+symbols fall back to a system font.
+
+Canvases are sized from the device-pixel box, so lines stay sharp on high-DPI
+screens and when the browser zoom changes.
+
 ## Run
 
 Needs Node 22.13 or newer (an even-numbered release; the workflow uses 22).
@@ -122,6 +155,11 @@ npm run smoke      # loads every demo in a headless browser (needs agent-browser
                    # and `npm run preview` running); fails on any page error
 ```
 
+The home page thumbnails in `public/thumbs` are screenshots of the demos
+themselves. After changing how a demo looks, remake them with
+`scripts/thumbnails.sh http://localhost:5173` while `npm run dev` is running
+(needs agent-browser and ImageMagick).
+
 ## Layout
 
 ```
@@ -134,6 +172,10 @@ src/demos/     one folder per section, one module per demo, loaded on demand
   registry.ts  the sections; each folder's index.ts lists its demos
   layout.ts    the shared page skeleton
 src/ui/        canvas sizing, playback, URL state, pointer input, controls, theme
+src/main.ts    router, search, theme switch and keyboard shortcuts
+src/home.ts    the index page and the not-found page
+src/fonts/     IBM Plex Sans and Mono (woff2) and their licence
+public/        favicon, 404.html, preview image, thumbnails
 ```
 
 An ESLint rule keeps `src/core` from importing UI code or touching browser
@@ -146,13 +188,17 @@ the system light or dark scheme unless overridden. With
 `prefers-reduced-motion`, the animated demos start paused on a complete frame
 and can be advanced with Step or Play. Drawing and dragging on a canvas need a
 pointer; presets, typed input and Randomise do not. The layout works down to
-phone width.
+phone width, where controls are 44 px tall and the playback buttons sit directly
+under the canvas. Text and control borders meet WCAG AA contrast in both themes,
+and every focusable element shows a focus ring.
 
 ## Deploying
 
 `.github/workflows/pages.yml` builds and publishes `dist/` to GitHub Pages. It
 does nothing until Pages is enabled for the repository with "GitHub Actions" as
-the source.
+the source. The social preview tag points at `og.png` with a relative address;
+some sites want an absolute one, so put the site's full address in the
+`og:image` tag in `index.html` once it is known.
 
 ## Credits
 
