@@ -62,7 +62,7 @@ values back from a buffer.
 
 ## Run
 
-Needs Node 20 or newer.
+Needs Node 22.13 or newer (an even-numbered release; the workflow uses 22).
 
 ```
 npm install

@@ -5,6 +5,9 @@
   "description": "Three interactive algorithm demos: Fourier epicycles, metaballs with marching squares, and sorting.",
   "license": "MIT",
   "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
