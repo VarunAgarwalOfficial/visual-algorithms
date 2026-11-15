@@ -102,7 +102,10 @@ export const mount: Mount = (root, entry) => {
           const b = node.right && before.get(node.right.id);
           const start =
             before.get(id) ??
-            (a && b ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : target.get(id));
+            // A new node rises from just above its two children, never on top of them.
+            (a && b
+              ? { x: (a.x + b.x) / 2, y: Math.min(a.y, b.y) - 2.4 * radius }
+              : target.get(id));
           return [id, start ?? { x: 0, y: 0 }] as const;
         }),
       );
@@ -279,7 +282,16 @@ export const mount: Mount = (root, entry) => {
         ctx.font = `${labelSize(small)}px ${FONT}`;
         ctx.textAlign = 'center';
         ctx.fillStyle = finished ? palette.ink : palette.muted;
-        ctx.fillText(String(bit), mx + side * (small * 0.75), my - small * 0.35);
+        // Beside the edge's midpoint, far enough out that the edge clears the digit by 4 px; on a
+        // nearly flat edge, above it instead.
+        const m = ctx.measureText(String(bit));
+        const hw = (m.actualBoundingBoxLeft + m.actualBoundingBoxRight) / 2;
+        const hh = (m.actualBoundingBoxAscent + m.actualBoundingBoxDescent) / 2;
+        const dy = Math.abs(c.y - p.y);
+        const slope = Math.abs(c.x - p.x) / Math.max(dy, 1e-6);
+        const mid = my + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2;
+        if (slope < 3) ctx.fillText(String(bit), mx + side * (hh * slope + hw + 4), mid);
+        else ctx.fillText(String(bit), mx, mid - hh - 4 - (hw + 4) / slope);
       });
     }
 

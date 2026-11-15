@@ -194,17 +194,18 @@ export const mount: Mount = (root, entry) => {
     });
 
     // The knapsack as a bar, one unit of width per unit of capacity.
-    const labelW = Math.min(70, width * 0.2);
-    const barX = pad + labelW;
-    const barW = width - 2 * pad - labelW;
     const barH = Math.min(34, stripH * 0.5);
-    const barY = height - stripH + (stripH - barH) * 0.45;
-    const unit = barW / settings.cap;
     const size = Math.max(8, Math.min(12, barH * 0.42));
-
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     ctx.font = `${labelSize(size)}px ${FONT}`;
+    // The label's own width plus a gap, so the bar never starts under it.
+    const labelW = Math.max(Math.min(70, width * 0.2), ctx.measureText('Knapsack').width + 10);
+    const barX = pad + labelW;
+    const barW = width - 2 * pad - labelW;
+    const barY = height - stripH + (stripH - barH) * 0.45;
+    const unit = barW / settings.cap;
+
     ctx.fillStyle = palette.muted;
     ctx.fillText('Knapsack', pad, barY + barH / 2);
 
@@ -234,17 +235,24 @@ export const mount: Mount = (root, entry) => {
     ctx.strokeRect(barX + 0.5, barY + 0.5, barW - 1, barH - 1);
     ctx.beginPath();
     for (let k = 1; k < settings.cap; k++) {
-      ctx.moveTo(barX + unit * k, barY + barH);
-      ctx.lineTo(barX + unit * k, barY + barH + 3);
+      // Inside the bar's bottom edge, so the numbers below have the room.
+      ctx.moveTo(barX + unit * k, barY + barH - 4);
+      ctx.lineTo(barX + unit * k, barY + barH);
     }
     ctx.stroke();
     ctx.fillStyle = palette.muted;
     ctx.font = `${labelSize(Math.max(7, size * 0.85))}px ${FONT}`;
-    ctx.fillText('0', barX, barY + barH + size);
-    ctx.fillText(String(settings.cap), barX + barW, barY + barH + size);
+    // The scale's numbers hang below the ticks, clear of them.
+    ctx.textBaseline = 'top';
+    const scaleY = Math.min(
+      barY + barH + 4,
+      height - 2 - ctx.measureText('0').actualBoundingBoxDescent,
+    );
+    ctx.fillText('0', barX, scaleY);
+    ctx.fillText(String(settings.cap), barX + barW, scaleY);
     if (current && w > 0 && w < settings.cap) {
       ctx.fillStyle = palette.change;
-      ctx.fillText(String(w), barX + unit * w, barY + barH + size);
+      ctx.fillText(String(w), barX + unit * w, scaleY);
     }
   }
 

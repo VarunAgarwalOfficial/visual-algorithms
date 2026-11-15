@@ -35,6 +35,8 @@ export const mount: Mount = (root, entry) => {
     HULL_ALGORITHMS.find((a) => a.id === settings.alg)?.id ?? 'graham';
 
   let steps: HullStep[] = [];
+  /** The finished hull, so the point numbers can keep clear of its edges. */
+  let finalHull: number[] = [];
   let step: HullStep | undefined;
 
   const theme = watchPalette(() => draw());
@@ -65,7 +67,9 @@ export const mount: Mount = (root, entry) => {
 
   /** Records a new trace. After a pointer edit the finished hull is shown, so dragging is live. */
   function retrace(live: boolean) {
-    steps = convexHull(algorithm(), editor.points).steps;
+    const result = convexHull(algorithm(), editor.points);
+    steps = result.steps;
+    finalHull = result.hull;
     caption.textContent = NOTES[algorithm()];
     player.setLength(steps.length, live ? steps.length : 0);
     url.save();
@@ -150,7 +154,12 @@ export const mount: Mount = (root, entry) => {
       const colour = step.turn.keep ? palette.compare : palette.change;
       for (const i of [step.turn.a, step.turn.b, step.turn.c]) dot(ctx, ...at(i), radius, colour);
     }
-    labelPoints(ctx, view, points, palette.muted);
+    // The numbers keep clear of the finished hull's edges, and are outlined in the page colour so
+    // the lines of a step in progress pass behind them.
+    const edges = finalHull.map(
+      (a, k) => [points[a], points[finalHull[(k + 1) % finalHull.length]]] as const,
+    );
+    labelPoints(ctx, view, points, palette.muted, { halo: palette.bg, avoid: edges, radius });
   }
 
   function update() {
@@ -199,11 +208,11 @@ export const mount: Mount = (root, entry) => {
     status,
     stack,
     legend([
-      ['var(--canvas-accent)', 'Hull so far'],
-      ['var(--canvas-compare)', 'Turn tested, kept'],
-      ['var(--canvas-change)', 'Turn tested, rejected'],
-      ['var(--canvas-muted)', 'Popped or discarded (hollow)'],
-      ['var(--canvas-good)', 'Finished'],
+      ['var(--canvas-accent)', 'Hull so far', 'dot'],
+      ['var(--canvas-compare)', 'Turn tested, kept', 'dot'],
+      ['var(--canvas-change)', 'Turn tested, rejected', 'dot'],
+      ['var(--canvas-muted)', 'Popped or discarded (hollow)', 'hollow'],
+      ['var(--canvas-good)', 'Finished', 'dot'],
     ]),
   );
   about.append(

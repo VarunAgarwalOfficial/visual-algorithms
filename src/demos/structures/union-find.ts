@@ -9,6 +9,7 @@ import {
   disc,
   drawCells,
   fitTree,
+  font,
   label,
   roleStyle,
   type Gfx,
@@ -104,13 +105,13 @@ export const mount: Mount = (root, entry) => {
       children: (node) => kids.get(node) ?? [],
       gap: 0.35,
     });
-    const probe = cellGrid(n, { x: pad, y: 0, w: width - 2 * pad, h: height * 0.24 }, 19, 32);
+    const probe = cellGrid(n, { x: pad, y: 0, w: width - 2 * pad, h: height * 0.24 }, 30, 34);
     const stripTop = height - pad - probe.height;
     const strip = cellGrid(
       n,
       { x: pad, y: stripTop, w: width - 2 * pad, h: height * 0.24 },
-      19,
-      32,
+      30,
+      34,
     );
 
     const box = { x: pad, y: pad, w: width - 2 * pad, h: stripTop - pad - 20 };
@@ -140,6 +141,9 @@ export const mount: Mount = (root, entry) => {
         Math.max(3, Math.min(5, r * 0.5)),
       );
     }
+    // Root labels go above their roots; one that would touch its left neighbour's label moves up
+    // a line, so a row of close roots reads as two staggered rows.
+    const roots: { p: Point; text: string }[] = [];
     for (let i = 0; i < n; i++) {
       const p = at.get(i);
       if (!p) continue;
@@ -148,10 +152,19 @@ export const mount: Mount = (root, entry) => {
         text: r >= 4.5 ? String(i) : undefined,
       });
       if (frame.parent[i] === i && rule() !== 'none' && r >= 8) {
-        label(ctx, `${rule()} ${frame.weight[i]}`, p.x, p.y - r - 7, palette.muted, 10);
+        roots.push({ p, text: `${rule()} ${frame.weight[i]}` });
       }
     }
-    label(ctx, 'parent[i]', pad, stripTop - 9, palette.muted, 10, 'left');
+    ctx.font = font(10);
+    const ends: number[] = [];
+    for (const { p, text } of roots.sort((a, b) => a.p.x - b.p.x)) {
+      const w = ctx.measureText(text).width;
+      const tier = ends.findIndex((end) => end + 6 <= p.x - w / 2);
+      const k = tier === -1 ? ends.length : tier;
+      ends[k] = p.x + w / 2;
+      label(ctx, text, p.x, p.y - r - 7 - k * 20, palette.muted, 10);
+    }
+    label(ctx, 'parent[i]', pad, stripTop - 14, palette.muted, 10, 'left');
     drawCells(
       g,
       frame.parent.map((parent, i) => ({

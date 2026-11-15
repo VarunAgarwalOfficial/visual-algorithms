@@ -21,8 +21,8 @@ import { tracePlayer } from '../../ui/player';
 import { onDrag } from '../../ui/pointer';
 import { mix, watchPalette } from '../../ui/theme';
 import { phoneDefault, urlState } from '../../ui/url';
-import { FONT, labelSize } from '../../ui/font';
-import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
+import { FONT, SMALL } from '../../ui/font';
+import { buildLayout, formula, legend, prose, stats, type Mount, type SwatchMark } from '../layout';
 
 type Preset = 'random' | 'maze' | 'empty';
 const PRESETS: readonly { id: Preset; name: string }[] = [
@@ -200,9 +200,9 @@ export const mount: Mount = (root, entry) => {
 
   /** The key lists only the kinds of cell this grid and search can show. */
   function showKey() {
-    const items: [string, string][] = [
-      ['var(--canvas-ink)', 'S: start'],
-      ['var(--canvas-ink)', 'G: goal'],
+    const items: (readonly [string, string] | readonly [string, string, SwatchMark])[] = [
+      ['var(--canvas-ink)', 'S: start', 'S'],
+      ['var(--canvas-ink)', 'G: goal', 'G'],
       ['color-mix(in srgb, var(--canvas-ink) 70%, var(--canvas-bg))', 'Wall'],
     ];
     if (grid.cells.includes(MUD)) {
@@ -213,7 +213,7 @@ export const mount: Mount = (root, entry) => {
     }
     items.push(
       ['var(--canvas-compare)', 'Reached, waiting to be visited'],
-      ['var(--canvas-visit)', 'Visited'],
+      ['var(--canvas-visit)', 'Visited', 'pale'],
     );
     if (settings.alg === 'bidirectional') {
       items.push([
@@ -269,7 +269,12 @@ export const mount: Mount = (root, entry) => {
   // --- Rendering ---
 
   function geometry() {
-    const cell = Math.min(stage.width / grid.cols, stage.height / grid.rows);
+    // A margin all round, so the grid does not run into the picture's border.
+    const inset = 12;
+    const cell = Math.min(
+      (stage.width - 2 * inset) / grid.cols,
+      (stage.height - 2 * inset) / grid.rows,
+    );
     return {
       cell,
       ox: (stage.width - cell * grid.cols) / 2,
@@ -364,7 +369,13 @@ export const mount: Mount = (root, entry) => {
 
     const marker = (i: number, colour: string, letter: string) => {
       const [x, y] = centre(i);
-      const r = Math.max(5, cell * 0.48);
+      // The letter is 17px, so on a fine grid the circle grows past its cell to hold the letter
+      // with room to spare, like a pin on a map.
+      ctx.font = `${SMALL}px ${FONT}`;
+      const m = ctx.measureText(letter);
+      const fit =
+        Math.hypot(m.width, m.actualBoundingBoxAscent + m.actualBoundingBoxDescent) / 2 + 3;
+      const r = Math.max(cell * 0.48, fit);
       ctx.beginPath();
       ctx.arc(x, y, r, 0, 2 * Math.PI);
       ctx.fillStyle = colour;
@@ -373,10 +384,10 @@ export const mount: Mount = (root, entry) => {
       ctx.strokeStyle = palette.bg;
       ctx.stroke();
       ctx.fillStyle = palette.bg;
-      ctx.font = `600 ${labelSize(Math.max(8, Math.round(r * 1.2)))}px ${FONT}`;
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(letter, x, y + 0.5);
+      ctx.textBaseline = 'alphabetic';
+      // Centred on the letter's ink, not its line box, so it sits in the middle of the circle.
+      ctx.fillText(letter, x, y + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2);
       ctx.textAlign = 'left';
       ctx.textBaseline = 'alphabetic';
     };

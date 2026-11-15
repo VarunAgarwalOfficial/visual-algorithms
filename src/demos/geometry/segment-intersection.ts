@@ -16,8 +16,7 @@ import { tracePlayer } from '../../ui/player';
 import { watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
-import { clampInt, dot, worldView } from './points';
-import { FONT, SMALL } from '../../ui/font';
+import { clampInt, dot, labelPoints, worldView } from './points';
 
 const MAX_SEGMENTS = 24;
 
@@ -203,13 +202,15 @@ export const mount: Mount = (root, entry) => {
       if (i === hot) dot(ctx, view.x(p.x), view.y(p.y), 6, 'transparent', palette.accent);
     });
     if (segments.length <= 16 || width > 500) {
-      ctx.font = `${SMALL}px ${FONT}`;
-      ctx.fillStyle = palette.muted;
-      ctx.textBaseline = 'bottom';
-      segments.forEach((s, i) => {
-        const left = s.a.x < s.b.x || (s.a.x === s.b.x && s.a.y < s.b.y) ? s.a : s.b;
-        ctx.textAlign = 'right';
-        ctx.fillText(`s${i + 1}`, view.x(left.x) - 4, view.y(left.y) - 2);
+      const lefts = segments.map((s) =>
+        s.a.x < s.b.x || (s.a.x === s.b.x && s.a.y < s.b.y) ? s.a : s.b,
+      );
+      labelPoints(ctx, view, lefts, palette.muted, {
+        prefix: 's',
+        limit: Infinity,
+        halo: palette.bg,
+        avoid: segments.map((s) => [s.a, s.b] as const),
+        radius: 3,
       });
     }
 

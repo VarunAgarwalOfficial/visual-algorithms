@@ -166,11 +166,28 @@ export function stats<K extends string>(labels: Record<K, string>): Stats<K> {
   };
 }
 
-/** A colour key. Each item is [CSS colour or variable, label]. */
-export function legend(items: readonly (readonly [string, string])[]): HTMLUListElement {
+/**
+ * How a key's swatch is drawn, to match the picture: a square by default, 'dot' for a filled
+ * circle, 'hollow' for a ring, 'pale' for a square with an outline (a colour close to the page),
+ * or a single letter for a filled circle carrying that letter.
+ */
+export type SwatchMark = 'dot' | 'hollow' | 'pale' | (string & {});
+
+/** A colour key. Each item is [CSS colour or variable, label, swatch shape]. */
+export function legend(
+  items: readonly (readonly [string, string] | readonly [string, string, SwatchMark])[],
+): HTMLUListElement {
   return el(
     'ul',
     { class: 'legend' },
-    ...items.map(([colour, text]) => el('li', { style: `--swatch: ${colour}`, text })),
+    ...items.map(([colour, text, mark]) => {
+      const attrs: Record<string, string> = { style: `--swatch: ${colour}`, text };
+      if (mark === 'dot' || mark === 'hollow' || mark === 'pale') attrs.class = mark;
+      else if (mark) {
+        attrs.class = 'letter';
+        attrs['data-mark'] = mark;
+      }
+      return el('li', attrs);
+    }),
   );
 }

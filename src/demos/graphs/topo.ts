@@ -19,7 +19,7 @@ export const mount: Mount = (root, entry) => {
     labelled: true,
     maxNodes: 20,
     maxWeight: 1,
-    strip: () => 54,
+    strip: () => 70,
     algorithms: ALGORITHMS,
     presets: DAG_PRESETS,
     makePreset: dagPreset,
@@ -58,15 +58,15 @@ export const mount: Mount = (root, entry) => {
         text: letter(i),
         fill: roleNode(frame.nodes[i], palette).fill,
       });
-      const box = { x: 10, width: width - 20, height: 24 };
+      const box = { x: 10, width: width - 20, height: 30 };
       drawChips(
         ctx,
         palette,
-        { ...box, y: height - 52 },
+        { ...box, y: height - 66 },
         dfs ? 'Stack (top right)' : 'Queue (front left)',
         frame.bag.map(chip),
       );
-      drawChips(ctx, palette, { ...box, y: height - 27 }, 'Order', frame.order.map(chip));
+      drawChips(ctx, palette, { ...box, y: height - 33 }, 'Order', frame.order.map(chip));
     },
   });
 

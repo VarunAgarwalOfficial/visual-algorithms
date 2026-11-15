@@ -124,15 +124,17 @@ export function drawTable(
     }
   }
 
+  const fillOf = (r: number, c: number) =>
+    r === curRow && c === curCol
+      ? mix(palette.bg, palette.change, 0.3)
+      : onPath.has(key([r, c]))
+        ? mix(palette.bg, palette.good, 0.38)
+        : undefined;
+
   // Cell backgrounds.
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const isCurrent = r === curRow && c === curCol;
-      const fill = isCurrent
-        ? mix(palette.bg, palette.change, 0.3)
-        : onPath.has(key([r, c]))
-          ? mix(palette.bg, palette.good, 0.38)
-          : undefined;
+      const fill = fillOf(r, c);
       if (fill) {
         ctx.fillStyle = fill;
         ctx.fillRect(cellX(c), cellY(r), cw, ch);
@@ -181,17 +183,6 @@ export function drawTable(
     ctx.lineWidth = 1;
   }
 
-  // Values.
-  ctx.font = `${labelSize(size)}px ${FONT}`;
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const text = spec.value(r, c);
-      if (text === undefined) continue;
-      ctx.fillStyle = palette.ink;
-      ctx.fillText(text, cellX(c) + cw / 2, cellY(r) + ch / 2 + 0.5);
-    }
-  }
-
   // Cells read by the current one.
   if (spec.current) {
     const [tx, ty] = centre(curRow, curCol);
@@ -226,6 +217,21 @@ export function drawTable(
     ctx.strokeStyle = palette.change;
     ctx.lineWidth = 2;
     ctx.strokeRect(cellX(curCol) + 1, cellY(curRow) + 1, cw - 2, ch - 2);
+  }
+
+  // Values, last, each on a patch of its cell's colour, so an arrow or the traceback line passes under it.
+  ctx.font = `${labelSize(size)}px ${FONT}`;
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 4;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const text = spec.value(r, c);
+      if (text === undefined) continue;
+      ctx.strokeStyle = fillOf(r, c) ?? palette.bg;
+      ctx.strokeText(text, cellX(c) + cw / 2, cellY(r) + ch / 2 + 0.5);
+      ctx.fillStyle = palette.ink;
+      ctx.fillText(text, cellX(c) + cw / 2, cellY(r) + ch / 2 + 0.5);
+    }
   }
 
   ctx.restore();

@@ -64,51 +64,133 @@ export function dotRadius(stage: Stage, count: number): number {
   return count > 80 ? base - 1 : base;
 }
 
+/** Extra rules for where point numbers may go. */
+export interface LabelOptions {
+  /** At most this many points are numbered. Default 30. */
+  limit?: number;
+  prefix?: string;
+  /** The number of the first point. Default 1. */
+  first?: number;
+  /** The page colour: each number gets a thin outline in it, so a line passing behind is cut. */
+  halo?: string;
+  /** Lines (in world coordinates) the numbers keep clear of where they can, such as a finished hull. */
+  avoid?: readonly (readonly [Point, Point])[];
+  /** The point radius, so numbers keep clear of the dots. */
+  radius?: number;
+}
+
 /** Numbers the points p1, p2, ... when there are few enough to read. */
 export function labelPoints(
   ctx: CanvasRenderingContext2D,
   view: View,
   points: readonly Point[],
   colour: string,
-  limit = 30,
-  prefix = '',
+  options: LabelOptions = {},
 ): void {
+  const { limit = 30, prefix = '', first = 1, halo, avoid = [], radius = 4 } = options;
   if (points.length > limit) return;
+  ctx.save();
   ctx.font = `${SMALL}px ${FONT}`;
   ctx.fillStyle = colour;
   ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-  // At the small size, numbers of close points would run into each other, so each one takes
-  // the first free place around its point (above right, then the other corners and sides).
-  type Rect = [number, number, number, number];
-  const taken: Rect[] = points.map((p) => {
-    const x = view.x(p.x);
-    const y = view.y(p.y);
-    return [x - 4, y - 4, x + 4, y + 4];
-  });
-  const clear = (r: Rect) =>
-    taken.every((t) => r[2] <= t[0] || r[0] >= t[2] || r[3] <= t[1] || r[1] >= t[3]);
-  const h = SMALL;
-  points.forEach((p, i) => {
-    const text = `${prefix}${i + 1}`;
-    const w = ctx.measureText(text).width;
-    const x = view.x(p.x);
-    const y = view.y(p.y);
-    const spots: [number, number][] = [
-      [x + 5, y - h - 2],
-      [x - 5 - w, y - h - 2],
-      [x + 5, y + 2],
-      [x - 5 - w, y + 2],
-      [x + 7, y - h / 2],
-      [x - 7 - w, y - h / 2],
-      [x - w / 2, y - h - 6],
-      [x - w / 2, y + 6],
-    ];
-    const spot = spots.find(([sx, sy]) => clear([sx, sy, sx + w, sy + h])) ?? spots[0];
-    taken.push([spot[0], spot[1], spot[0] + w, spot[1] + h]);
-    ctx.fillText(text, spot[0], spot[1]);
-  });
   ctx.textBaseline = 'alphabetic';
+  // At 17px, numbers of close points would run into each other or into the lines, so each one
+  // takes the first place around its point that is clear of every dot, every number placed so
+  // far (with a gap, so "18" and "7" do not read as one number), the lines to avoid and the
+  // canvas edge. Places further out are tried before giving up; with no clear place, the one
+  // with the fewest clashes is used.
+  type Rect = [number, number, number, number];
+  const width = ctx.canvas.clientWidth;
+  const height = ctx.canvas.clientHeight;
+  const GAP = 3;
+  const dots: Rect[] = points.map((p) => {
+    const x = view.x(p.x);
+    const y = view.y(p.y);
+    const r = radius + GAP;
+    return [x - r, y - r, x + r, y + r];
+  });
+  const labels: Rect[] = [];
+  const lines = avoid.map(
+    ([a, b]) => [view.x(a.x), view.y(a.y), view.x(b.x), view.y(b.y)] as const,
+  );
+  const meets = (r: Rect, t: Rect) =>
+    !(r[2] <= t[0] || r[0] >= t[2] || r[3] <= t[1] || r[1] >= t[3]);
+  const crosses = (r: Rect, [x1, y1, x2, y2]: readonly number[]) => {
+    // Liang-Barsky clip of the segment against the rectangle.
+    let t0 = 0;
+    let t1 = 1;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const sides: [number, number][] = [
+      [-dx, x1 - r[0]],
+      [dx, r[2] - x1],
+      [-dy, y1 - r[1]],
+      [dy, r[3] - y1],
+    ];
+    for (const [p, q] of sides) {
+      if (p === 0) {
+        if (q < 0) return false;
+      } else {
+        const t = q / p;
+        if (p < 0) t0 = Math.max(t0, t);
+        else t1 = Math.min(t1, t);
+        if (t0 > t1) return false;
+      }
+    }
+    return true;
+  };
+  const clashes = (r: Rect) => {
+    const padded: Rect = [r[0] - GAP, r[1] - GAP, r[2] + GAP, r[3] + GAP];
+    let n = 0;
+    if (r[0] < 1 || r[1] < 1 || r[2] > width - 1 || r[3] > height - 1) n += 100;
+    for (const t of dots) if (meets(r, t)) n += 10;
+    for (const t of labels) if (meets(padded, t)) n += 10;
+    for (const l of lines) if (crosses(padded, l)) n += 1;
+    return n;
+  };
+  points.forEach((p, i) => {
+    const text = `${prefix}${i + first}`;
+    const m = ctx.measureText(text);
+    const w = m.actualBoundingBoxLeft + m.actualBoundingBoxRight;
+    const h = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent;
+    const x = view.x(p.x);
+    const y = view.y(p.y);
+    const spots: [number, number][] = [];
+    for (const d of [radius + GAP + 1, radius + GAP + 8, radius + GAP + 16]) {
+      spots.push(
+        [x + d * 0.7, y - d * 0.7 - h],
+        [x - d * 0.7 - w, y - d * 0.7 - h],
+        [x + d * 0.7, y + d * 0.7],
+        [x - d * 0.7 - w, y + d * 0.7],
+        [x + d, y - h / 2],
+        [x - d - w, y - h / 2],
+        [x - w / 2, y - d - h],
+        [x - w / 2, y + d],
+      );
+    }
+    let best = spots[0];
+    let fewest = Infinity;
+    for (const [sx, sy] of spots) {
+      const n = clashes([sx, sy, sx + w, sy + h]);
+      if (n < fewest) {
+        fewest = n;
+        best = [sx, sy];
+      }
+      if (n === 0) break;
+    }
+    const [sx, sy] = best;
+    labels.push([sx, sy, sx + w, sy + h]);
+    const bx = sx + m.actualBoundingBoxLeft;
+    const by = sy + m.actualBoundingBoxAscent;
+    if (halo) {
+      ctx.strokeStyle = halo;
+      ctx.lineWidth = 5;
+      ctx.lineJoin = 'round';
+      ctx.strokeText(text, bx, by);
+    }
+    ctx.fillText(text, bx, by);
+  });
+  ctx.restore();
 }
 
 /** The URL fields the editor reads and writes. `pts` is '' for "generate from the seed". */

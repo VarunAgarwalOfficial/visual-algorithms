@@ -15,8 +15,7 @@ import { tracePlayer } from '../../ui/player';
 import { watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
-import { clampInt, dot, pointEditor, worldView } from './points';
-import { FONT, SMALL } from '../../ui/font';
+import { clampInt, dot, labelPoints, pointEditor, worldView } from './points';
 
 /** Playback moves t in this many equal steps from 0 to 1. */
 const T_STEPS = 200;
@@ -138,7 +137,11 @@ export const mount: Mount = (root, entry) => {
     ctx.clearRect(0, 0, width, height);
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
+    // Every line drawn, so the point names can keep clear of them.
+    const drawn: [Point, Point][] = [];
     const polyline = (points: readonly Point[], close = false) => {
+      for (let k = 1; k < points.length; k++) drawn.push([points[k - 1], points[k]]);
+      if (close && points.length > 2) drawn.push([points[points.length - 1], points[0]]);
       ctx.beginPath();
       points.forEach((p, k) =>
         k ? ctx.lineTo(view.x(p.x), view.y(p.y)) : ctx.moveTo(view.x(p.x), view.y(p.y)),
@@ -226,17 +229,20 @@ export const mount: Mount = (root, entry) => {
       });
     }
 
-    ctx.font = `${SMALL}px ${FONT}`;
-    ctx.textBaseline = 'bottom';
-    ctx.textAlign = 'left';
     control.forEach((p, i) => {
       const inPlay = i >= activeFrom && i <= activeTo;
       const x = view.x(p.x);
       const y = view.y(p.y);
       dot(ctx, x, y, 5, inPlay ? palette.ink : palette.bg, inPlay ? undefined : palette.muted);
       if (i === editor.hot) dot(ctx, x, y, 8, 'transparent', palette.accent);
-      ctx.fillStyle = palette.muted;
-      ctx.fillText(`P${i}`, x + 7, y - 4);
+    });
+    labelPoints(ctx, view, control, palette.muted, {
+      prefix: 'P',
+      first: 0,
+      limit: Infinity,
+      halo: palette.bg,
+      avoid: drawn,
+      radius: 5,
     });
     const [point] = levels[levels.length - 1];
     dot(ctx, view.x(point.x), view.y(point.y), 5, palette.change, palette.bg);

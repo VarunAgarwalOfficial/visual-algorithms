@@ -135,7 +135,7 @@ export const mount: Mount = (root, entry) => {
       else dot(ctx, px(i), py(i), radius, outside ? palette.muted : palette.ink);
       if (i === editor.hot) dot(ctx, px(i), py(i), radius + 3, 'transparent', palette.accent);
     });
-    labelPoints(ctx, view, points, palette.muted);
+    labelPoints(ctx, view, points, palette.muted, { halo: palette.bg, radius: radius + 1 });
   }
 
   function update() {

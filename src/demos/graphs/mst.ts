@@ -181,7 +181,8 @@ export const mount: Mount = (root, entry) => {
       ctx.fillText(strip, 10, top);
       if (order.length === 0) return;
       const base = height - 6;
-      const tall = base - top - 16;
+      // The bars stay below the title, its descenders included.
+      const tall = base - top - 22;
       const slot = Math.min(14, (width - 20) / order.length);
       const heaviest = graph.edges[order[order.length - 1]].w;
       order.forEach((edge, k) => {

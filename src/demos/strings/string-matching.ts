@@ -151,17 +151,10 @@ export const mount: Mount = (root, entry) => {
     const small = Math.max(7, Math.min(12, cell * 0.92, cellH * 0.42));
     const rowGap = cellH * 0.75;
 
-    const blockH = cellH * 2 + small * 5.6 + rowGap + small * 2;
-    const titleH = Math.max(14, small * 1.8);
-    const y0 = Math.max(pad + titleH + small * 2.2, (height - blockH) / 2 + small * 2);
-    const yTop = y0;
-    const yTopVals = yTop + cellH + small * 0.9;
-    const yBottom = yTop + cellH + small * 1.8 + rowGap;
-    const yBottomVals = yBottom + cellH + small * 0.9;
-
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
-    ctx.font = `${labelSize(Math.max(9, Math.min(13, width * 0.03)))}px ${FONT}`;
+    const titleSize = labelSize(Math.max(9, Math.min(13, width * 0.03)));
+    ctx.font = `${titleSize}px ${FONT}`;
     ctx.fillStyle = palette.muted;
     const title =
       m === 0
@@ -171,7 +164,27 @@ export const mount: Mount = (root, entry) => {
           : matcher() === 'naive'
             ? 'Searching the text'
             : 'Phase 2: searching the text';
-    ctx.fillText(title, pad, pad + titleH / 2);
+    // A title too wide for a narrow canvas breaks between words onto a second line.
+    const titleLines: string[] = [];
+    for (const word of title.split(' ')) {
+      const last = titleLines.length - 1;
+      if (last >= 0 && ctx.measureText(`${titleLines[last]} ${word}`).width <= width - 2 * pad) {
+        titleLines[last] += ` ${word}`;
+      } else titleLines.push(word);
+    }
+    const titleLine = titleSize * 1.25;
+
+    const blockH = cellH * 2 + small * 5.6 + rowGap + small * 2;
+    const titleH = Math.max(14, small * 1.8) + (Math.max(1, titleLines.length) - 1) * titleLine;
+    const y0 = Math.max(pad + titleH + small * 2.2, (height - blockH) / 2 + small * 2);
+    const yTop = y0;
+    const yTopVals = yTop + cellH + small * 0.9;
+    const yBottom = yTop + cellH + small * 1.8 + rowGap;
+    const yBottomVals = yBottom + cellH + small * 0.9;
+
+    titleLines.forEach((line, i) =>
+      ctx.fillText(line, pad, pad + Math.max(14, small * 1.8) / 2 + i * titleLine),
+    );
 
     const box = (
       x: number,

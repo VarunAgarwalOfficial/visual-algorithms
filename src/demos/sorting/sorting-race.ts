@@ -95,7 +95,8 @@ export const mount: Mount = (root, entry) => {
     const pad = Math.min(10, width * 0.025);
     const cellW = (width - 2 * pad - (columns - 1) * gap) / columns;
     const cellH = (height - 2 * pad - (rows - 1) * gap) / rows;
-    const header = 32;
+    // Two lines of text above the bars: the name, then the counts.
+    const header = 46;
 
     racers.forEach((racer, k) => {
       const x = pad + (k % columns) * (cellW + gap);
@@ -110,11 +111,11 @@ export const mount: Mount = (root, entry) => {
         placeWidth = ctx.measureText(text).width + 6;
         ctx.textAlign = 'right';
         ctx.fillStyle = palette.good;
-        ctx.fillText(text, x + cellW, y + 12);
+        ctx.fillText(text, x + cellW, y + 15);
       }
       ctx.textAlign = 'left';
       ctx.fillStyle = palette.ink;
-      ctx.fillText(algorithm.name.replace(/ \(.*\)$/, ''), x, y + 12, cellW - placeWidth);
+      ctx.fillText(algorithm.name.replace(/ \(.*\)$/, ''), x, y + 15, cellW - placeWidth);
 
       const { comparisons, swaps, writes, reads } = playback.counts;
       const split =
@@ -125,7 +126,7 @@ export const mount: Mount = (root, entry) => {
       ctx.fillStyle = palette.ink;
       ctx.globalAlpha = 0.75;
       const line = ctx.measureText(split).width <= cellW ? split : `${playback.position} ops`;
-      ctx.fillText(line, x, y + 26, cellW);
+      ctx.fillText(line, x, y + 36, cellW);
       ctx.globalAlpha = 1;
 
       const rect = { x, y: y + header, w: cellW, h: cellH - header };

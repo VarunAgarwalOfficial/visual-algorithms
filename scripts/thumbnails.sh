@@ -2,6 +2,7 @@
 # Makes the home page thumbnails: public/thumbs/<demo>-light.webp and -dark.webp.
 # Each demo is loaded, moved to an interesting moment (60% through a recorded
 # trace, or a few seconds into a simulation) and its canvas is photographed.
+# Text is left out: at card size it would be too small to read.
 # Needs the `agent-browser` CLI and ImageMagick.
 #
 #   npm run dev &
@@ -44,6 +45,7 @@ for theme in light dark; do
     agent-browser open "$base/#/$id" >/dev/null
     agent-browser wait ".stage canvas" >/dev/null
     agent-browser wait 400 >/dev/null
+    agent-browser eval "CanvasRenderingContext2D.prototype.fillText = CanvasRenderingContext2D.prototype.strokeText = () => {}" >/dev/null
     state=$(agent-browser eval "$seek")
     case "$state" in *running*) agent-browser wait 3500 >/dev/null ;; *) agent-browser wait 300 >/dev/null ;; esac
     agent-browser screenshot ".stage canvas" "$tmp/$id.png" >/dev/null

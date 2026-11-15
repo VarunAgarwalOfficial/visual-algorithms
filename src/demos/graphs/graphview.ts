@@ -154,13 +154,34 @@ export function drawGraph(
   for (const i of order) {
     const s = styles[i];
     if (s.hidden || !s.label) continue;
-    const at = along(
-      curve(view, graph, graph.edges[i], style.directed),
-      style.directed ? 0.4 : 0.5,
-    );
-    const width = ctx.measureText(s.label).width + 6;
+    // The patch covers the letters' ink with 3 px to spare on every side.
+    const m = ctx.measureText(s.label);
+    // Along the edge, at the first place where the patch clears every node by 2 px.
+    const shape = curve(view, graph, graph.edges[i], style.directed);
+    const clear = (p: Point) => {
+      const x0 = p.x - m.actualBoundingBoxLeft - 3;
+      const x1 = p.x + m.actualBoundingBoxRight + 3;
+      const y0 = p.y + 0.5 - m.actualBoundingBoxAscent - 3;
+      const y1 = p.y + 0.5 + m.actualBoundingBoxDescent + 3;
+      return graph.nodes.every((node) => {
+        const c = view.toCanvas(node);
+        const dx = Math.max(x0 - c.x, 0, c.x - x1);
+        const dy = Math.max(y0 - c.y, 0, c.y - y1);
+        return Math.hypot(dx, dy) >= r + 2;
+      });
+    };
+    const first = style.directed ? 0.4 : 0.5;
+    const at =
+      [first, 0.5, 0.45, 0.55, 0.35, 0.6, 0.3, 0.65].map((t) => along(shape, t)).find(clear) ??
+      along(shape, first);
+    const width = m.actualBoundingBoxLeft + m.actualBoundingBoxRight + 6;
     ctx.fillStyle = palette.bg;
-    ctx.fillRect(at.x - width / 2, at.y - 7.5, width, 15);
+    ctx.fillRect(
+      at.x - m.actualBoundingBoxLeft - 3,
+      at.y + 0.5 - m.actualBoundingBoxAscent - 3,
+      width,
+      m.actualBoundingBoxAscent + m.actualBoundingBoxDescent + 6,
+    );
     ctx.fillStyle = s.labelColour ?? palette.ink;
     ctx.fillText(s.label, at.x, at.y + 0.5);
   }
@@ -192,10 +213,15 @@ export function drawGraph(
     if (s.sub) {
       // Put the note on the side of the node with the most room between edges.
       ctx.font = `${SMALL}px ${FONT}`;
-      const width = ctx.measureText(s.sub).width + 4;
+      const m = ctx.measureText(s.sub);
+      const width = m.actualBoundingBoxLeft + m.actualBoundingBoxRight + 4;
+      // Half the height of the letters' ink, plus 2 px, measured from the middle baseline.
+      const half = Math.max(m.actualBoundingBoxAscent, m.actualBoundingBoxDescent) + 2;
       const place = (angle: number) => {
-        const reach =
-          r + 3 + Math.abs(Math.cos(angle)) * (width / 2) + Math.abs(Math.sin(angle)) * 7;
+        // The corner of the note's box nearest the node keeps 4 px from its rim.
+        const ex = Math.abs(Math.cos(angle)) * (width / 2);
+        const ey = Math.abs(Math.sin(angle)) * half;
+        const reach = r + 4 + Math.hypot(ex, ey);
         return { x: x + Math.cos(angle) * reach, y: y + Math.sin(angle) * reach };
       };
       const fits = (angle: number) => {
@@ -203,13 +229,13 @@ export function drawGraph(
         return (
           c.x - width / 2 >= 0 &&
           c.x + width / 2 <= view.width &&
-          c.y - 7 >= 0 &&
-          c.y + 7 <= view.height
+          c.y - half >= 0 &&
+          c.y + half <= view.height
         );
       };
       const c = place(freeSide(angles[i], fits));
       ctx.fillStyle = palette.bg;
-      ctx.fillRect(c.x - width / 2, c.y - 6.5, width, 13);
+      ctx.fillRect(c.x - width / 2, c.y + 0.5 - half, width, 2 * half);
       ctx.fillStyle = palette.ink;
       ctx.fillText(s.sub, c.x, c.y + 0.5);
     }
@@ -259,15 +285,23 @@ export function drawChips(
   const size = Math.min(box.height - 4, (box.x + box.width - left) / Math.max(1, chips.length));
   ctx.textAlign = 'center';
   ctx.font = `600 ${labelSize(Math.max(8, Math.min(11, size * 0.6)))}px ${FONT}`;
+  // Each chip is a square with a 4 px gap to the next, so its letter has room inside it.
+  const side = size - 4;
   chips.forEach((chip, i) => {
     const x = left + i * size;
     ctx.fillStyle = chip.fill;
-    ctx.fillRect(x, mid - size / 2 + 1, size - 2, size - 2);
+    ctx.fillRect(x, mid - side / 2, side, side);
     ctx.strokeStyle = palette.muted;
     ctx.lineWidth = 1;
-    ctx.strokeRect(x + 0.5, mid - size / 2 + 1.5, size - 3, size - 3);
+    ctx.strokeRect(x + 0.5, mid - side / 2 + 0.5, side - 1, side - 1);
     ctx.fillStyle = palette.ink;
-    ctx.fillText(chip.text, x + size / 2 - 1, mid + 0.5);
+    // Centred on its ink: a capital sits above the middle of the em box.
+    const m = ctx.measureText(chip.text);
+    ctx.fillText(
+      chip.text,
+      x + side / 2,
+      mid + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2,
+    );
   });
   if (chips.length === 0) {
     ctx.textAlign = 'left';

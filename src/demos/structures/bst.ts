@@ -125,8 +125,8 @@ export const mount: Mount = (root, entry) => {
     const { ctx, palette, width, height } = g;
     const kind = variant();
     const pad = Math.max(8, width * 0.025);
-    const top = 22;
-    if (frame.rule) label(ctx, frame.rule, pad, 13, palette.ink, 12, 'left', true);
+    const top = 32;
+    if (frame.rule) label(ctx, frame.rule, pad, 15, palette.ink, 12, 'left', true);
     if (!frame.root) {
       label(ctx, 'Empty tree. Insert a key.', width / 2, height / 2, palette.muted, 13);
       return;
@@ -139,12 +139,15 @@ export const mount: Mount = (root, entry) => {
     });
     const fit = fitTree(
       layout,
-      { x: pad, y: top, w: width - 2 * pad, h: height - top - pad - (kind === 'avl' ? 16 : 0) },
+      { x: pad, y: top, w: width - 2 * pad, h: height - top - pad - (kind === 'avl' ? 26 : 0) },
       60,
       72,
     );
     const squeeze = layout.depth > 1 ? fit.levelGap * 0.5 : 20;
-    const r = Math.max(3.5, Math.min(20, fit.unit * 0.46 > 6.5 ? fit.unit * 0.46 : 6.5, squeeze));
+    let r = Math.max(3.5, Math.min(20, fit.unit * 0.46 > 6.5 ? fit.unit * 0.46 : 6.5, squeeze));
+    // In an AVL tree the 17 px balance label sits under each node, so the nodes shrink until a
+    // node, its label and the next level's node fit in one level gap without touching.
+    if (kind === 'avl' && layout.depth > 1) r = Math.max(9, Math.min(r, (fit.levelGap - 26) / 2));
     const px = Math.max(7.5, Math.min(14, r * 0.95));
     const at = new Map<number, { x: number; y: number }>();
     const visit = (node: TreeSnap | null, each: (node: TreeSnap) => void) => {

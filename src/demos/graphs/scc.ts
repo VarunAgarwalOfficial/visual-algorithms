@@ -19,7 +19,7 @@ export const mount: Mount = (root, entry) => {
     labelled: true,
     maxNodes: 16,
     maxWeight: 1,
-    strip: () => 54,
+    strip: () => 70,
     algorithms: ALGORITHMS,
     presets: SCC_PRESETS,
     makePreset: sccPreset,
@@ -77,11 +77,11 @@ export const mount: Mount = (root, entry) => {
         }),
       });
       const chip = (i: number) => ({ text: letter(i), fill: node(i).fill });
-      const box = { x: 10, width: width - 20, height: 24 };
+      const box = { x: 10, width: width - 20, height: 30 };
       drawChips(
         ctx,
         palette,
-        { ...box, y: height - 52 },
+        { ...box, y: height - 66 },
         tarjanRun ? 'Stack (top right)' : 'Search path',
         frame.stack.map(chip),
       );
@@ -90,12 +90,12 @@ export const mount: Mount = (root, entry) => {
           .map((_, i) => i)
           .filter((i) => frame.comp[i] >= 0)
           .sort((p, q) => frame.comp[p] - frame.comp[q] || p - q);
-        drawChips(ctx, palette, { ...box, y: height - 27 }, 'Components', grouped.map(chip));
+        drawChips(ctx, palette, { ...box, y: height - 33 }, 'Components', grouped.map(chip));
       } else {
         drawChips(
           ctx,
           palette,
-          { ...box, y: height - 27 },
+          { ...box, y: height - 33 },
           'Finishing order (pass 2 reads it right to left)',
           frame.finished.map(chip),
         );

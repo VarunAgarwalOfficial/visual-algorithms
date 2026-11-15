@@ -80,12 +80,31 @@ function labelBars(
   const word = { compare: 'compare', swap: 'swap', write: 'write', read: 'read' }[step] ?? step;
   ctx.font = SMALL_FONT;
   ctx.textBaseline = 'alphabetic';
-  for (let i = 0; i < n; i++) {
-    const colour = highlight(i);
-    if (!colour) continue;
-    const x = Math.max(plot.x + 22, Math.min(plot.x + plot.w - 22, plot.x + (i + 0.5) * slot));
-    ctx.fillStyle = palette.ink;
-    ctx.fillText(word, x, bottom - Math.max(1, array[i] * unit) - 4);
+  ctx.fillStyle = palette.ink;
+  // The word is wider than a bar, so it goes above the tallest bar it spans, never on a bar's
+  // top. Highlighted bars close enough for their words to meet share one word, centred over them.
+  const metrics = ctx.measureText(word);
+  const w = metrics.width;
+  // Clear of the bar top by 5 px below the descender, not the baseline.
+  const lift = metrics.actualBoundingBoxDescent + 5;
+  const half = w / 2 + 3;
+  const centres: number[] = [];
+  for (let i = 0; i < n; i++) if (highlight(i)) centres.push(plot.x + (i + 0.5) * slot);
+  const groups: number[][] = [];
+  for (const c of centres) {
+    const last = groups[groups.length - 1];
+    if (last && c - last[last.length - 1] < 2 * half) last.push(c);
+    else groups.push([c]);
+  }
+  for (const group of groups) {
+    const mid = (group[0] + group[group.length - 1]) / 2;
+    const x = Math.max(plot.x + half, Math.min(plot.x + plot.w - half, mid));
+    let tallest = 0;
+    for (let i = 0; i < n; i++) {
+      const left = plot.x + i * slot;
+      if (left + slot > x - half && left < x + half) tallest = Math.max(tallest, array[i]);
+    }
+    ctx.fillText(word, x, bottom - Math.max(1, tallest * unit) - lift);
   }
   ctx.textAlign = 'left';
 }

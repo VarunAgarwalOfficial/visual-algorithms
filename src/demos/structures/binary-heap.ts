@@ -1,6 +1,7 @@
 import { BinaryHeap, HEAP_CAPACITY, type HeapFrame } from '../../core/structures/heap';
 import { button, checkbox, el, fieldset } from '../../ui/dom';
 import { urlState } from '../../ui/url';
+import { SMALL } from '../../ui/font';
 import { formula, legend, prose, stats, type Mount } from '../layout';
 import { cellGrid, disc, drawCells, label, line, roleStyle, type Gfx } from './draw';
 import { actFieldset, opForm, opsDemo, presetSelect, record, wholeNumber } from './shared';
@@ -95,13 +96,20 @@ export const mount: Mount = (root, entry) => {
       );
       return;
     }
-    // The array strip sits at the bottom; the tree takes what is left.
-    const grid = cellGrid(n, { x: pad, y: 0, w: width - 2 * pad, h: height * 0.3 }, 19, 34);
+    // The array strip sits at the bottom; the tree takes what is left. A cell is at least 30 px
+    // so a two-digit value at 17 px has room inside its border; on a phone the strip wraps.
+    const grid = cellGrid(n, { x: pad, y: 0, w: width - 2 * pad, h: height * 0.34 }, 30, 36);
     const stripTop = height - pad - grid.height;
-    const strip = cellGrid(n, { x: pad, y: stripTop, w: width - 2 * pad, h: height * 0.3 }, 19, 34);
+    const strip = cellGrid(
+      n,
+      { x: pad, y: stripTop, w: width - 2 * pad, h: height * 0.34 },
+      30,
+      36,
+    );
 
     const levels = Math.floor(Math.log2(n)) + 1;
-    const treeHeight = stripTop - pad - 16;
+    // Room under the tree for the 17 px "array" label.
+    const treeHeight = stripTop - pad - 34;
     const slot = (width - 2 * pad) / 2 ** (levels - 1);
     const r = Math.max(6, Math.min(20, slot * 0.44, treeHeight / (levels * 2.6)));
     const gap = levels > 1 ? Math.min(84, (treeHeight - 2 * r) / (levels - 1)) : 0;
@@ -123,7 +131,9 @@ export const mount: Mount = (root, entry) => {
       const at = g.place(`node:${item.id}`, rest.x, rest.y);
       label(ctx, String(item.value), at.x, at.y + 0.5, palette.ink, px);
     });
-    label(ctx, 'array', pad, stripTop - 9, palette.muted, 10, 'left');
+    // The label sits just above the strip's first cell.
+    const first = strip.at(0);
+    label(ctx, 'array', first.x - strip.cell / 2, stripTop - 14, palette.muted, SMALL, 'left');
     drawCells(
       g,
       frame.items.map((item, i) => ({
@@ -244,7 +254,7 @@ export const mount: Mount = (root, entry) => {
     legend([
       ['var(--canvas-compare)', 'Compared'],
       ['var(--canvas-change)', 'Swapped'],
-      ['var(--canvas-visit)', 'The other child'],
+      ['var(--canvas-visit)', 'The other child', 'pale'],
       ['var(--canvas-good)', 'Settled'],
     ]),
   );

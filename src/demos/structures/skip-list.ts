@@ -3,7 +3,7 @@ import { SKIP_MAX_LEVEL, SkipList, type SkipFrame } from '../../core/structures/
 import { button, el } from '../../ui/dom';
 import { urlState } from '../../ui/url';
 import { formula, legend, prose, stats, type Mount } from '../layout';
-import { arrow, disc, label, roleColour, roleStyle, type Gfx } from './draw';
+import { arrow, disc, font, label, roleColour, roleStyle, type Gfx } from './draw';
 import { keyOpCodec, keyOpsFieldset, opsDemo, presetSelect, record, refuse } from './shared';
 
 const MAX_KEY = 99;
@@ -64,9 +64,29 @@ export const mount: Mount = (root, entry) => {
     const { ctx, palette, width, height } = g;
     const pad = Math.max(8, width * 0.025);
     const columns = frame.nodes.length + 1; // the towers, then the end marker
-    const col = (width - 2 * pad) / columns;
     const coins = 26;
     const keyRow = 18;
+    // The head column is widened when "head" would touch the first key under it.
+    let col = (width - 2 * pad) / columns;
+    const px = Math.max(8, Math.min(12, col * 0.5));
+    ctx.font = font(Math.min(10, px));
+    const headW = ctx.measureText('head').width;
+    ctx.font = font(10);
+    const endW = ctx.measureText('end').width;
+    ctx.font = font(px, true);
+    const keyW = Math.max(
+      0,
+      ...frame.nodes.slice(1).map((n) => ctx.measureText(String(n.key)).width),
+    );
+    // Likewise the end column, when "end" would touch the last key.
+    const extra = Math.max(0, headW / 2 + keyW / 2 + 6 - col);
+    const extraEnd = Math.max(0, endW / 2 + keyW / 2 + 6 - col);
+    col = (width - 2 * pad - extra - extraEnd) / columns;
+    const colX = (i: number) =>
+      pad + (i + 0.5) * col + (i > 0 ? extra : 0) + (i === columns - 1 ? extraEnd : 0);
+    const endX = colX(columns - 1);
+    ctx.font = font(10);
+    const levelW = ctx.measureText(`L${SKIP_MAX_LEVEL}`).width;
     const row = Math.min(46, (height - 2 * pad - coins - keyRow) / SKIP_MAX_LEVEL);
     const box = Math.max(7, Math.min(26, col * 0.62, row * 0.7));
     const base = Math.min(
@@ -74,8 +94,6 @@ export const mount: Mount = (root, entry) => {
       pad + coins + (height - 2 * pad - coins - keyRow + SKIP_MAX_LEVEL * row) / 2,
     );
     const y = (level: number) => base - (level + 0.5) * row;
-    const px = Math.max(8, Math.min(12, col * 0.5));
-    const endX = pad + (columns - 0.5) * col;
 
     // Coin flips for the tower being inserted.
     if (frame.flips) {
@@ -95,7 +113,7 @@ export const mount: Mount = (root, entry) => {
 
     const x = new Map<number, number>();
     frame.nodes.forEach((node, i) => {
-      x.set(node.id, g.place(node.id, pad + (i + 0.5) * col, 0).x);
+      x.set(node.id, g.place(node.id, colX(i), 0).x);
     });
     for (let level = 0; level < SKIP_MAX_LEVEL; level++) {
       label(
@@ -115,7 +133,8 @@ export const mount: Mount = (root, entry) => {
       node.next.forEach((next, level) => {
         if (next === undefined) return;
         if (node.id === 0 && level >= frame.levels) return;
-        const to = next === null ? endX - 10 : (x.get(next) ?? endX) - box / 2 - 1;
+        // A pointer to the end stops short of the level name drawn there.
+        const to = next === null ? endX - levelW / 2 - 5 : (x.get(next) ?? endX) - box / 2 - 1;
         const role = frame.hi.get(`${node.id}:${level}`);
         const colour =
           role === 'compare' || role === 'change' ? roleColour(palette, role) : undefined;

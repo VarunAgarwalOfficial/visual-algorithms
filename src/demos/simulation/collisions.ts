@@ -283,8 +283,9 @@ export const mount: Mount = (root, entry) => {
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
     ctx.fillText('Speeds', left + 6, top + 4);
-    const plotTop = top + 20;
-    const plotHeight = h - 26;
+    // The plot starts below the title's descenders.
+    const plotTop = top + 26;
+    const plotHeight = h - 32;
     const barWidth = (w - 12) / BINS;
     ctx.fillStyle = palette.accent;
     for (let k = 0; k < BINS; k++) {

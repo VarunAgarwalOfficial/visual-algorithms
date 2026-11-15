@@ -879,6 +879,33 @@ output {
   background: var(--swatch);
 }
 
+/* Swatches shaped like what the picture draws. */
+.legend li.dot::before {
+  border-radius: 50%;
+}
+
+.legend li.hollow::before {
+  background: none;
+  border: 1.5px solid var(--swatch);
+  border-radius: 50%;
+}
+
+.legend li.pale::before {
+  border: 1px solid var(--canvas-muted);
+}
+
+.legend li.letter::before {
+  content: attr(data-mark);
+  width: 1.3em;
+  height: 1.3em;
+  border-radius: 50%;
+  color: var(--canvas-bg);
+  font-size: 0.85em;
+  line-height: 1.3em;
+  text-align: center;
+  vertical-align: -0.2em;
+}
+
 /* A swatch that shows a range of colours rather than one. */
 .legend li.range::before {
   width: 4em;
@@ -993,6 +1020,12 @@ output {
 
   .card-text {
     align-self: stretch;
+  }
+
+  /* On a phone the picture is square, not 4:3, so its 17px labels have room. */
+  .stage canvas {
+    aspect-ratio: 1 / 1;
+    max-height: min(62vh, 30rem);
   }
 
   input[type='range'] {
