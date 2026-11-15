@@ -20,7 +20,7 @@ import { mix, watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { clampInt } from './points';
-import { FONT } from '../../ui/font';
+import { FONT, SMALL, labelSize } from '../../ui/font';
 
 const SIZES = [
   { id: '12', name: '12 × 9 cells' },
@@ -205,7 +205,7 @@ export const mount: Mount = (root, entry) => {
 
     // The samples: a dot at every grid corner, larger and darker where the field is higher.
     const showNumbers = settings.values && cell >= 26;
-    ctx.font = `${Math.min(11, Math.floor(cell * 0.36))}px ${FONT}`;
+    ctx.font = `${labelSize(Math.min(11, Math.floor(cell * 0.36)))}px ${FONT}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     for (let r = 0; r <= rows; r++) {
@@ -286,7 +286,7 @@ export const mount: Mount = (root, entry) => {
     const slotW = width / 8;
     const slotH = height / 2;
     const box = Math.min(slotW * 0.5, slotH * 0.5);
-    ctx.font = `10px ${FONT}`;
+    ctx.font = `${SMALL}px ${FONT}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     for (let index = 0; index < 16; index++) {

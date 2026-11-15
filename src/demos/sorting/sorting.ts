@@ -2,6 +2,7 @@ import { ALGORITHMS, getAlgorithm, type AlgorithmId } from '../../core/sorting/a
 import { Playback, type Step } from '../../core/sorting/trace';
 import { createStage } from '../../ui/canvas';
 import { checkbox, el, fieldset, select } from '../../ui/dom';
+import { SMALL, wrapLines } from '../../ui/font';
 import { tracePlayer } from '../../ui/player';
 import { onDrag } from '../../ui/pointer';
 import { watchPalette } from '../../ui/theme';
@@ -20,6 +21,9 @@ import {
   type Rect,
   type ViewMode,
 } from './render';
+
+/** Height of one line of the label over the bars. */
+const LINE = SMALL + 6;
 
 /** Says what a step did, given the array after it, in the words drawn over the bars. */
 function describe(step: Step, playback: Playback): string {
@@ -117,10 +121,7 @@ export const mount: Mount = (root, entry) => {
       ]);
     }
     if (ranged) {
-      items.push([
-        'color-mix(in srgb, var(--canvas-series-1) 60%, var(--canvas-bg))',
-        'Part of the array being worked on',
-      ]);
+      items.push(['var(--canvas-muted)', 'Part of the array being worked on']);
     }
     if (buckets) items.push(['var(--canvas-accent)', 'Bucket counts']);
     items.push(['var(--canvas-good)', 'Sorted (at the end)']);
@@ -129,30 +130,45 @@ export const mount: Mount = (root, entry) => {
 
   // --- Rendering ---
 
-  /** The part of the canvas under the label line. */
-  function body(): Rect {
+  /** The words over the picture: what the current step is doing. */
+  function label(): string {
+    return playback.done
+      ? 'Sorted: shortest on the left, tallest on the right'
+      : (playback.mark?.label ??
+          (player.position === 0
+            ? `Nothing has run yet${editable() ? ' (you can drag a bar to change its value)' : ''}`
+            : algorithm().name));
+  }
+
+  /** The label, wrapped to the canvas width (it is never squeezed or cut). */
+  function labelLines(): string[] {
     const pad = Math.min(12, stage.width * 0.03);
-    return { x: pad, y: pad + 18, w: stage.width - 2 * pad, h: stage.height - 2 * pad - 18 };
+    stage.ctx.font = FONT;
+    return wrapLines(stage.ctx, label(), stage.width - 2 * pad);
+  }
+
+  /** The part of the canvas under the label lines. */
+  function body(lines = labelLines().length): Rect {
+    const pad = Math.min(12, stage.width * 0.03);
+    const top = lines * LINE;
+    return { x: pad, y: pad + top, w: stage.width - 2 * pad, h: stage.height - 2 * pad - top };
   }
 
   function draw() {
     const { ctx, width, height } = stage;
     const { palette } = theme;
     ctx.clearRect(0, 0, width, height);
-    const rect = body();
+    const lines = labelLines();
+    const rect = body(lines.length);
     drawSort(ctx, palette, rect, playback, view(), scaleMax);
 
-    const label = playback.done
-      ? 'Sorted: shortest on the left, tallest on the right'
-      : (playback.mark?.label ??
-        (player.position === 0
-          ? `Nothing has run yet${editable() ? ' (you can drag a bar to change its value)' : ''}`
-          : algorithm().name));
     ctx.font = FONT;
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
     ctx.fillStyle = palette.ink;
-    ctx.fillText(label, rect.x, rect.y - 7, rect.w);
+    lines.forEach((line, k) =>
+      ctx.fillText(line, rect.x, rect.y - 7 - (lines.length - 1 - k) * LINE),
+    );
   }
 
   function update() {

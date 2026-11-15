@@ -1,0 +1,183 @@
+/*
+ * The design tokens of look C, "Editorial": one file of CSS custom
+ * properties, the single source for this site's look and for the teaching
+ * tools and showcase pages that sit inside its frame. Self-contained: it sets
+ * no rule on any element, only fonts and custom properties on :root, so a
+ * tool can import it unchanged and use the names. The site's own look,
+ * src/styles/themes/c-editorial.css, imports it. TOOLS.md says how a tool
+ * uses it.
+ */
+
+/* Fonts. Root-relative URLs: a tool copies the files into its own public
+   fonts/ folder, so the same paths work in its dev server and on this site.
+   Newsreader and IBM Plex Mono are SIL OFL 1.1 (Newsreader-OFL.txt,
+   IBM-Plex-OFL.txt); CM Web Serif is a renamed subset of New Computer Modern
+   under the GUST Font License (GUST-FONT-LICENSE.txt, LPPL-1.3c.txt,
+   NewCM-License.txt). Copy the licence texts with the fonts. ---------- */
+
+/* Text: Newsreader, variable in weight and optical size (the browser picks
+   the optical size from the font size). */
+@font-face {
+  font-family: "Newsreader";
+  src: url("/fonts/newsreader-latin-opsz-normal.woff2") format("woff2-variations");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Newsreader";
+  src: url("/fonts/newsreader-latin-opsz-italic.woff2") format("woff2-variations");
+  font-weight: 200 800;
+  font-style: italic;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* Greek, arrows and mathematical symbols outside Newsreader's set, and
+   plain-text maths where KaTeX is not used. */
+@font-face {
+  font-family: "CM Web Serif";
+  src: url("/fonts/cmweb-serif-book.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+/* Code, and data that must line up in columns. */
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/ibm-plex-mono-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/ibm-plex-mono-latin-600-normal.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light dark;
+
+  /* Page and ink: the ground, the text, the quieter text (captions, dates,
+     status lines), the hairline rule, the ground for code and table cells,
+     the highlighter, the selection. */
+  --site-color-bg: #f6f5f2;
+  --site-color-fg: #211f1c;
+  --site-color-muted: #625e57;
+  --site-color-rule: #d8d5cd;
+  --site-color-code-bg: #ecebe6;
+  --site-color-mark: #ebe1bd;
+  --site-color-selection: #e4d9cf;
+
+  /* The one accent, oxblood. Links are set in the ink; the accent is the
+     rule under them, and the focus ring. Nothing else uses it. */
+  --site-color-link: #211f1c;
+  --site-color-link-line: #a3443a;
+  --site-color-focus: #a3443a;
+
+  /* The four meaning colours, for evidence only, as the small square before
+     an evidence label: proved (machine-checked, or proved on paper),
+     measured (computed, tested, measured or simulated, but not proved), open
+     (in progress, or not yet checked), against (false, or not new). Never
+     decoration, and never without the word beside it. */
+  --site-mean-proved: #3d6f48;
+  --site-mean-measured: #8a6417;
+  --site-mean-open: #6b5592;
+  --site-mean-against: #9b3f36;
+
+  /* Font stacks: text, code, maths. KaTeX brings its own fonts when it is
+     used; --site-font-math is for maths set without it. */
+  --site-font-body: "Newsreader", "CM Web Serif", Georgia, serif;
+  --site-font-mono:
+    "IBM Plex Mono", ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
+  --site-font-math: "KaTeX_Main", "CM Web Serif", "Times New Roman", serif;
+  --site-weight-normal: 400;
+  --site-weight-bold: 600;
+
+  /* Type sizes: small (captions, status lines, the navigation), text, an
+     entry title in a list, a section heading, the page title, and the page
+     title on phones. Headings are regular weight; size and space make the
+     hierarchy. */
+  --site-step--1: 1.0625rem;
+  --site-step-0: 1.25rem;
+  --site-step-item: 1.375rem;
+  --site-step-heading: 1.75rem;
+  --site-step-1: 2.75rem;
+  --site-step-title-narrow: 2.25rem;
+  --site-leading-tight: 1.15;
+  --site-leading-body: 1.55;
+  --site-tracking-caps: 0.06em;
+  --site-tracking-title: -0.01em;
+  /* KaTeX's maths, scaled to Newsreader's x-height. */
+  --site-math-size: 1.08em;
+
+  /* Spacing steps, smallest to largest: 1 to 3 inside a component, 4 and 5
+     between paragraphs and rows, 6 between sections, 7 and 8 around the
+     page. */
+  --site-space-1: 0.25rem;
+  --site-space-2: 0.5rem;
+  --site-space-3: 0.75rem;
+  --site-space-4: 1rem;
+  --site-space-5: 1.5rem;
+  --site-space-6: 2.5rem;
+  --site-space-7: 4.5rem;
+  --site-space-8: 7rem;
+
+  /* The measure: the widest a column of running text may be (about 65
+     characters of Newsreader at 20px), and the side margin on small
+     screens. */
+  --site-measure: 36rem;
+  --site-gutter: 1.5rem;
+
+  /* Rules and small shapes: the hairline (drawn in --site-color-rule), the
+     heavier rule over and under tables, link underlines, the corner of code
+     and inputs, the square that carries a meaning colour. */
+  --site-rule-width: 1px;
+  --site-rule-heavy: 1.5px;
+  --site-underline-width: 1px;
+  --site-underline-offset: 0.2em;
+  --site-radius-1: 0.125rem;
+  --site-mark-size: 0.55em;
+
+  /* Focus ring: a solid outline in --site-color-focus, outside the element. */
+  --site-focus-width: 2px;
+  --site-focus-offset: 3px;
+
+  /* Motion: none. Durations are zero so anything written with them stays
+     still. */
+  --site-duration-fast: 0ms;
+  --site-duration-base: 0ms;
+  --site-ease: linear;
+}
+
+/* Dark: the same roles on a warm near-black; the accent and meaning colours
+   lighten to keep their contrast. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --site-color-bg: #1a1918;
+    --site-color-fg: #e7e4dd;
+    --site-color-muted: #a8a49b;
+    --site-color-rule: #36342f;
+    --site-color-code-bg: #242320;
+    --site-color-mark: #3c3722;
+    --site-color-selection: #3b2c28;
+
+    --site-color-link: #e7e4dd;
+    --site-color-link-line: #c77d70;
+    --site-color-focus: #d89587;
+
+    --site-mean-proved: #86b58f;
+    --site-mean-measured: #cfa75b;
+    --site-mean-open: #b29dd8;
+    --site-mean-against: #df8b80;
+  }
+}

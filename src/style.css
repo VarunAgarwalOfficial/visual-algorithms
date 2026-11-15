@@ -1,105 +1,78 @@
-/* Fonts: IBM Plex, bundled in src/fonts under the SIL Open Font License (src/fonts/OFL.txt). */
-
-@font-face {
-  font-family: 'IBM Plex Sans';
-  font-style: normal;
-  font-weight: 100 700;
-  font-display: swap;
-  src: url('./fonts/ibm-plex-sans-latin-wght-normal.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('./fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('./fonts/ibm-plex-mono-latin-600-normal.woff2') format('woff2');
-}
+/*
+ * The site's look, "Editorial". Every colour, size, space, font and rule below
+ * is one of the site's tokens (styles/c-editorial-tokens.css, copied unchanged
+ * from the website; the fonts and their licences are in public/fonts). The
+ * names on the left are this project's own, kept so the rest of the file and
+ * the canvas code read as before. Dark follows the system through the tokens.
+ */
+@import './styles/c-editorial-tokens.css';
 
 :root {
-  color-scheme: light dark;
-
-  /* Colour */
-  --bg: light-dark(#f6f5f1, #131516);
-  --surface: light-dark(#ffffff, #1c1f21);
-  --ink: light-dark(#1d1f21, #e8e6e1);
-  --muted: light-dark(#5b6066, #a3a8ad);
-  --border: light-dark(#dcdad3, #33383c);
-  --border-strong: light-dark(#b9b6ad, #4d5459);
-  /* Edges of buttons and inputs: 3:1 against the page, so a control is findable without its label. */
-  --control-border: light-dark(#8a877f, #6f767c);
-  --accent: light-dark(#2a6661, #6fbfb6);
-  --accent-ink: light-dark(#ffffff, #0f1516);
-  --danger: light-dark(#b23a26, #f0705a);
-  --focus: light-dark(#1c5fd4, #8ab4ff);
+  /* Page and ink */
+  --bg: var(--site-color-bg);
+  --surface: var(--site-color-bg);
+  --ink: var(--site-color-fg);
+  --muted: var(--site-color-muted);
+  --border: var(--site-color-rule);
+  --border-strong: var(--site-color-muted);
+  /* Edges of buttons and inputs: the quieter ink, at least 3:1 against the page. */
+  --control-border: var(--site-color-muted);
+  /* The one filled control (the first action) is set in the ink. */
+  --primary: var(--site-color-fg);
+  --primary-ink: var(--site-color-bg);
+  --danger: var(--site-mean-against);
+  --focus: var(--site-color-focus);
 
   /*
    * Canvas palette, read by the demos through ui/theme.ts. The meaning is the
-   * same in every demo: compare = being read, change = being written,
-   * good = finished or part of the answer, visit = already explored,
-   * accent = the current item or the frontier's owner.
+   * same in every demo and in the other teaching tools:
+   *   compare = being read or compared        -> measured
+   *   change  = being written, moved, rejected -> against
+   *   good    = finished, found, the answer    -> proved
+   *   accent  = the current item, the frontier -> open
+   *   visit   = already explored: no meaning colour, a grey tint
+   * series-1..4 are the same four colours, for pictures that tell groups apart.
    */
-  --canvas-bg: light-dark(#ffffff, #1c1f21);
-  --canvas-ink: light-dark(#1d1f21, #e8e6e1);
-  --canvas-muted: light-dark(#6d737a, #8f959b);
-  --canvas-faint: light-dark(#e3e1da, #2e3336);
-  --canvas-accent: light-dark(#2f6f6a, #6fbfb6);
-  --canvas-compare: light-dark(#d98a00, #f0b03f);
-  --canvas-change: light-dark(#c8452f, #f0705a);
-  --canvas-good: light-dark(#3d8a3d, #7fc97f);
-  --canvas-visit: light-dark(#a9c4e6, #2f4a66);
-  --canvas-series-1: light-dark(#2f6f6a, #6fbfb6);
-  --canvas-series-2: light-dark(#c8452f, #f0705a);
-  --canvas-series-3: light-dark(#3b6fb5, #7aa7e0);
-  --canvas-series-4: light-dark(#d98a00, #f0b03f);
-  --canvas-series-5: light-dark(#7a4fa3, #b592d6);
-  --canvas-series-6: light-dark(#5c7a1f, #a3c25a);
+  --canvas-bg: var(--site-color-bg);
+  --canvas-ink: var(--site-color-fg);
+  --canvas-muted: var(--site-color-muted);
+  --canvas-faint: var(--site-color-rule);
+  --canvas-accent: var(--site-mean-open);
+  --canvas-compare: var(--site-mean-measured);
+  --canvas-change: var(--site-mean-against);
+  --canvas-good: var(--site-mean-proved);
+  --canvas-visit: color-mix(in srgb, var(--site-color-muted) 30%, var(--site-color-bg));
+  --canvas-series-1: var(--site-mean-open);
+  --canvas-series-2: var(--site-mean-against);
+  --canvas-series-3: var(--site-mean-measured);
+  --canvas-series-4: var(--site-mean-proved);
 
-  /* Type scale: 12, 14, 16, 20, 28 px at the default root size. */
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-md: 1rem;
-  --text-lg: 1.25rem;
-  --text-xl: 1.75rem;
+  /* Type: small (labels, captions, controls) and text, then the three heading sizes. */
+  --text-xs: var(--site-step--1);
+  --text-sm: var(--site-step--1);
+  --text-md: var(--site-step-0);
+  --text-lg: var(--site-step-item);
+  --text-xl: var(--site-step-heading);
+  --text-title: var(--site-step-1);
 
-  /* Spacing scale: 4, 8, 12, 16, 24, 32, 48 px. */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.5rem;
-  --space-6: 2rem;
-  --space-7: 3rem;
+  --space-1: var(--site-space-1);
+  --space-2: var(--site-space-2);
+  --space-3: var(--site-space-3);
+  --space-4: var(--site-space-4);
+  --space-5: var(--site-space-5);
+  --space-6: var(--site-space-6);
+  --space-7: var(--site-space-7);
 
-  --radius: 8px;
-  --radius-small: 5px;
+  --radius: var(--site-radius-1);
+  --radius-small: var(--site-radius-1);
   /* Height of every button, select and text box. Taller under a finger; see the end of the file. */
-  --control: 2.5rem;
-  --page: 74rem;
-  --measure: 44rem;
+  --control: 2.75rem;
+  /* The site's block (58rem) plus its two gutters, so the page is as wide as the site's frame. */
+  --page: calc(58rem + 2 * var(--site-gutter));
+  --measure: var(--site-measure);
 
-  --fast: 120ms;
-  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
-
-  --font: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
-}
-
-/* The theme button overrides the system scheme. */
-:root[data-theme='light'] {
-  color-scheme: light;
-}
-
-:root[data-theme='dark'] {
-  color-scheme: dark;
+  --font: var(--site-font-body);
+  --mono: var(--site-font-mono);
 }
 
 *,
@@ -123,15 +96,19 @@ body {
   padding: 0 var(--space-5) var(--space-6);
   background: var(--bg);
   color: var(--ink);
-  font: var(--text-md) / 1.5 var(--font);
+  font: var(--text-md) / var(--site-leading-body) var(--font);
   font-variant-numeric: lining-nums;
   -webkit-text-size-adjust: 100%;
   text-rendering: optimizeLegibility;
 }
 
 :focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  outline: var(--site-focus-width) solid var(--focus);
+  outline-offset: var(--site-focus-offset);
+}
+
+::selection {
+  background: var(--site-color-selection);
 }
 
 main {
@@ -145,14 +122,18 @@ main:focus {
 }
 
 a {
-  color: inherit;
-  text-underline-offset: 0.15em;
+  color: var(--site-color-link);
+  text-decoration-color: var(--site-color-link-line);
+  text-decoration-thickness: var(--site-underline-width);
+  text-underline-offset: var(--site-underline-offset);
 }
 
+/* Headings are regular weight, as on the site: size and space make the hierarchy. */
 h1,
 h2,
 h3 {
-  font-weight: 600;
+  font-weight: var(--site-weight-normal);
+  line-height: var(--site-leading-tight);
   text-wrap: balance;
 }
 
@@ -192,17 +173,13 @@ textarea {
   border-radius: var(--radius);
   font: inherit;
   font-size: var(--text-sm);
-  transition:
-    border-color var(--fast) var(--ease),
-    background-color var(--fast) var(--ease),
-    color var(--fast) var(--ease);
 }
 
 input[type='text'],
 input[type='number'],
 textarea {
   width: 100%;
-  font-family: var(--mono);
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
 input::placeholder {
@@ -212,16 +189,6 @@ input::placeholder {
 
 select {
   width: 100%;
-  padding-right: var(--space-6);
-  appearance: none;
-  background-image:
-    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
-    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
-  background-position:
-    calc(100% - 1.05rem) 50%,
-    calc(100% - 0.75rem) 50%;
-  background-size: 0.3rem 0.3rem;
-  background-repeat: no-repeat;
   text-overflow: ellipsis;
 }
 
@@ -229,7 +196,7 @@ button,
 .file-button {
   cursor: pointer;
   text-align: center;
-  font-weight: 500;
+  font-weight: var(--site-weight-normal);
   user-select: none;
 }
 
@@ -252,26 +219,32 @@ button.primary[aria-disabled='true'] {
   color: var(--muted);
   background: transparent;
   border-color: var(--border);
-  filter: none;
   cursor: default;
 }
 
-button.primary,
-button[aria-pressed='true'] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-ink);
+/* The one filled control: the demo's first action. */
+button.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
 }
 
-button.primary:hover:not([aria-disabled='true']),
-button[aria-pressed='true']:hover {
-  border-color: var(--accent);
-  filter: brightness(1.08);
+button.primary:hover:not([aria-disabled='true']) {
+  border-color: var(--primary);
+  text-decoration: underline;
+  text-decoration-thickness: var(--site-underline-width);
+  text-underline-offset: var(--site-underline-offset);
 }
 
 button.primary:active:not([aria-disabled='true']) {
-  background: var(--accent);
-  filter: brightness(0.95);
+  background: var(--primary);
+}
+
+/* A switched-on toggle: a heavier edge in the ink, not a fill. */
+button[aria-pressed='true'] {
+  border-color: var(--ink);
+  outline: var(--site-rule-heavy) solid var(--ink);
+  outline-offset: calc(-1 * var(--site-rule-heavy) - 1px);
 }
 
 button.quiet {
@@ -287,7 +260,7 @@ input[type='range'] {
   width: 100%;
   min-height: 1.5rem;
   margin: 0;
-  accent-color: var(--accent);
+  accent-color: var(--ink);
   cursor: pointer;
 }
 
@@ -308,15 +281,14 @@ input[type='range'] {
   align-items: center;
   gap: var(--space-2);
   min-height: var(--control);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-size: var(--site-step-item);
   text-decoration: none;
 }
 
 .site-title svg {
   width: 1.25rem;
   height: 1.25rem;
-  color: var(--accent);
+  color: var(--muted);
 }
 
 .tools {
@@ -350,16 +322,13 @@ input[type='range'] {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 8px 28px rgb(0 0 0 / 0.18);
 }
 
 .results-heading {
   margin: var(--space-2) var(--space-2) var(--space-1);
   color: var(--muted);
   font-size: var(--text-xs);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-style: italic;
 }
 
 .results a {
@@ -438,10 +407,9 @@ input[type='range'] {
 /* Page head */
 
 h1 {
-  margin: 0 0 var(--space-1);
-  font-size: var(--text-xl);
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+  margin: var(--space-5) 0 var(--space-2);
+  font-size: var(--text-title);
+  letter-spacing: var(--site-tracking-title);
 }
 
 .lede {
@@ -478,11 +446,8 @@ h1 {
 }
 
 .home-head h1 {
-  font-size: clamp(var(--text-xl), 4vw, 2.5rem);
-}
-
-.home-head .lede {
-  font-size: 1.0625rem;
+  margin-top: 0;
+  font-size: var(--text-title);
 }
 
 .count {
@@ -506,8 +471,7 @@ h1 {
 
 .group-head h2 {
   margin: 0;
-  font-size: var(--text-lg);
-  letter-spacing: -0.01em;
+  font-size: var(--text-xl);
 }
 
 .group-head p {
@@ -517,31 +481,37 @@ h1 {
 }
 
 /* One column of rows, picture then words, so the eye only moves down the page. */
+/* Rows ruled off from one another, as the site's indexes are: no boxes, no fills. */
 .cards {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-3);
   max-width: 48rem;
   margin: 0;
   padding: 0;
   list-style: none;
+  border-bottom: var(--site-rule-width) solid var(--border);
+}
+
+.cards > li {
+  padding-block: var(--space-4);
+  border-top: var(--site-rule-width) solid var(--border);
 }
 
 .card {
   display: flex;
   flex-direction: row;
   align-items: stretch;
+  gap: var(--space-5);
   height: 100%;
   overflow: hidden;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
   text-decoration: none;
-  transition: border-color var(--fast) var(--ease);
 }
 
-.card:hover {
-  border-color: var(--accent);
+.card:hover h3 {
+  text-decoration: underline;
+  text-decoration-color: var(--site-color-link-line);
+  text-decoration-thickness: var(--site-underline-width);
+  text-underline-offset: var(--site-underline-offset);
 }
 
 .thumb {
@@ -552,7 +522,7 @@ h1 {
   aspect-ratio: 4 / 3;
   object-fit: cover;
   background: var(--canvas-bg);
-  border-right: 1px solid var(--border);
+  border: var(--site-rule-width) solid var(--border);
 }
 
 /* Each card carries a light and a dark thumbnail; only the one in use is loaded. */
@@ -561,38 +531,29 @@ h1 {
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) .thumb.light {
+  .thumb.light {
     display: none;
   }
 
-  :root:not([data-theme='light']) .thumb.dark {
+  .thumb.dark {
     display: block;
   }
 }
 
-:root[data-theme='dark'] .thumb.light {
-  display: none;
-}
-
-:root[data-theme='dark'] .thumb.dark {
-  display: block;
-}
-
 .card-text {
   align-self: center;
-  padding: var(--space-3) var(--space-4);
 }
 
 .card h3 {
   margin: 0 0 var(--space-1);
-  font-size: var(--text-md);
+  font-size: var(--text-lg);
 }
 
 .card p {
   margin: 0;
   color: var(--muted);
   font-size: var(--text-sm);
-  line-height: 1.45;
+  line-height: var(--site-leading-body);
 }
 
 .empty {
@@ -720,7 +681,6 @@ h1 {
   align-items: center;
   cursor: pointer;
   color: var(--ink);
-  font-weight: 600;
   list-style-position: inside;
 }
 
@@ -759,9 +719,7 @@ h1 {
   padding: 0;
   color: var(--muted);
   font-size: var(--text-xs);
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  font-style: italic;
 }
 
 .panel legend + * {
@@ -786,10 +744,11 @@ h1 {
   gap: var(--space-2);
 }
 
+/* Numbers that are data: the text face with lining, equal-width figures. */
 output {
   color: var(--muted);
-  font: var(--text-xs) var(--mono);
-  font-variant-numeric: tabular-nums;
+  font: var(--text-xs) var(--font);
+  font-variant-numeric: lining-nums tabular-nums;
   white-space: nowrap;
 }
 
@@ -805,7 +764,7 @@ output {
   width: 1rem;
   height: 1rem;
   margin: 0.15rem 0 0;
-  accent-color: var(--accent);
+  accent-color: var(--ink);
 }
 
 .buttons {
@@ -816,7 +775,7 @@ output {
 
 .buttons button {
   padding-inline: var(--space-2);
-  line-height: 1.2;
+  line-height: var(--site-leading-tight);
 }
 
 /* The file input stays focusable; its label is the visible button. */
@@ -837,8 +796,8 @@ output {
 }
 
 .file-button:focus-within {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  outline: var(--site-focus-width) solid var(--focus);
+  outline-offset: var(--site-focus-offset);
 }
 
 .readout {
@@ -883,8 +842,8 @@ output {
 
 .stats dd {
   margin: 0;
-  font: var(--text-lg) / 1.3 var(--mono);
-  font-variant-numeric: tabular-nums;
+  font: var(--text-lg) / var(--site-leading-tight) var(--font);
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
 .note {
@@ -916,9 +875,8 @@ output {
   width: 0.75em;
   height: 0.75em;
   margin-right: 0.45em;
-  border-radius: 2px;
+  border-radius: 0;
   background: var(--swatch);
-  box-shadow: inset 0 0 0 1px rgb(128 128 128 / 0.35);
 }
 
 /* A swatch that shows a range of colours rather than one. */
@@ -928,9 +886,9 @@ output {
 
 .about-body {
   margin-top: var(--space-3);
-  color: var(--muted);
-  font-size: 0.9375rem;
-  line-height: 1.6;
+  color: var(--ink);
+  font-size: var(--text-md);
+  line-height: var(--site-leading-body);
 }
 
 .about p {
@@ -951,7 +909,7 @@ output {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--ink);
-  font: 0.8125rem/1.6 var(--mono);
+  font: var(--text-sm) / var(--site-leading-body) var(--mono);
 }
 
 .pager {
@@ -965,11 +923,11 @@ output {
 
 .pager a {
   text-decoration: none;
-  transition: color var(--fast) var(--ease);
 }
 
 .pager a:hover {
-  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: var(--site-color-link-line);
 }
 
 .pager .next {
@@ -1002,7 +960,12 @@ output {
   }
 
   body {
-    padding: 0 var(--space-3) var(--space-5);
+    padding: 0 var(--site-gutter) var(--space-5);
+  }
+
+  h1,
+  .home-head h1 {
+    font-size: var(--site-step-title-narrow);
   }
 
   .site-header {
@@ -1017,18 +980,19 @@ output {
     flex: 1 1 8rem;
   }
 
-  .cards {
-    gap: var(--space-2);
+  /* On a phone each demo is one column: its picture, then its name and line. */
+  .card {
+    flex-direction: column;
+    gap: var(--space-3);
   }
 
   .thumb {
-    width: 7rem;
-    min-height: 100%;
-    aspect-ratio: auto;
+    width: 100%;
+    max-width: none;
   }
 
   .card-text {
-    padding: var(--space-3);
+    align-self: stretch;
   }
 
   input[type='range'] {

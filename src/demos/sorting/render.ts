@@ -1,6 +1,6 @@
 import type { Playback } from '../../core/sorting/trace';
-import { isDark, mix, type Palette } from '../../ui/theme';
-import { FONT as FAMILY } from '../../ui/font';
+import { isDark, type Palette } from '../../ui/theme';
+import { FONT as FAMILY, SMALL, labelSize } from '../../ui/font';
 
 export type ViewMode = 'bars' | 'dots' | 'wheel';
 
@@ -17,11 +17,11 @@ export interface Rect {
   h: number;
 }
 
-export const FONT = `12px ${FAMILY}`;
-export const SMALL_FONT = `11px ${FAMILY}`;
+export const FONT = `${SMALL}px ${FAMILY}`;
+export const SMALL_FONT = `${SMALL}px ${FAMILY}`;
 
-/** Series colours used to tint ranges: the ones that are not also the highlight colours. */
-const RANGE_SERIES = [0, 2, 4, 5];
+/** Ranges are told apart by position, not colour: up to four at once, all in the same grey. */
+const RANGE_SERIES = [0, 1, 2, 3];
 
 /** Whether this trace uses buckets, and so needs the tally strip under the array. */
 export function usesBuckets(playback: Playback): boolean {
@@ -39,11 +39,17 @@ export function splitRect(rect: Rect, buckets: boolean): { plot: Rect; strip?: R
 }
 
 /** Room kept under the bars for their values, and above them for the word naming the step. */
-export const VALUE_ROOM = 15;
-export const WORD_ROOM = 15;
+export const VALUE_ROOM = SMALL + 5;
+export const WORD_ROOM = SMALL + 5;
 
-/** Whether bars are wide enough to carry their values. */
-export const labelsFit = (width: number, n: number) => width / Math.max(1, n) >= 13;
+/** Bars narrower than this carry their values on two staggered lines, so no two values touch. */
+const ONE_LINE = 24;
+/** Room under the bars for their values: one line, or two when they are staggered. */
+const valueRoom = (width: number, n: number) =>
+  width / Math.max(1, n) >= ONE_LINE ? VALUE_ROOM : 2 * VALUE_ROOM - 4;
+
+/** Whether bars are wide enough to carry their values (on two staggered lines if need be). */
+export const labelsFit = (width: number, n: number) => width / Math.max(1, n) >= 12;
 
 /**
  * Writes each bar's value under it, and over each highlighted bar the word for
@@ -61,12 +67,15 @@ function labelBars(
   const n = array.length;
   if (!labelsFit(plot.w, n)) return;
   const { slot, unit, bottom } = columns(plot, n, scaleMax);
-  const size = Math.min(12, Math.max(9, Math.floor(slot * 0.55)));
-  ctx.font = `${size}px ${FAMILY}`;
+  ctx.font = `${labelSize(SMALL)}px ${FAMILY}`;
   ctx.textBaseline = 'top';
   ctx.textAlign = 'center';
   ctx.fillStyle = palette.muted;
-  for (let i = 0; i < n; i++) ctx.fillText(String(array[i]), plot.x + (i + 0.5) * slot, bottom + 3);
+  const stagger = slot < ONE_LINE;
+  for (let i = 0; i < n; i++) {
+    const y = bottom + 3 + (stagger && i % 2 === 1 ? VALUE_ROOM - 4 : 0);
+    ctx.fillText(String(array[i]), plot.x + (i + 0.5) * slot, y);
+  }
   if (!step) return;
   const word = { compare: 'compare', swap: 'swap', write: 'write', read: 'read' }[step] ?? step;
   ctx.font = SMALL_FONT;
@@ -95,7 +104,11 @@ export function layoutSort(
   const { plot } = split;
   return {
     ...split,
-    plot: { ...plot, y: plot.y + WORD_ROOM, h: Math.max(10, plot.h - WORD_ROOM - VALUE_ROOM) },
+    plot: {
+      ...plot,
+      y: plot.y + WORD_ROOM,
+      h: Math.max(10, plot.h - WORD_ROOM - valueRoom(plot.w, playback.array.length)),
+    },
   };
 }
 
@@ -141,8 +154,9 @@ export function drawSort(
   const group = new Int8Array(n).fill(-1);
   const ranges = done ? undefined : playback.mark?.ranges;
   ranges?.forEach(([lo, hi], k) => group.fill(k % RANGE_SERIES.length, lo, hi));
-  const rangeColours = RANGE_SERIES.map((k) => palette.series[k]);
-  const tints = rangeColours.map((colour) => mix(colour, palette.bg, 0.4));
+  // Inside a range a bar keeps its usual grey; outside every range it fades to the explored tint.
+  const rangeColours = RANGE_SERIES.map(() => palette.muted);
+  const tints = rangeColours;
 
   const highlight = (i: number): string | undefined => {
     if (!last) return undefined;
@@ -152,7 +166,13 @@ export function drawSort(
     return last.type === 'compare' || last.type === 'read' ? palette.compare : palette.change;
   };
   const base = (i: number) =>
-    done ? palette.good : group[i] >= 0 ? tints[group[i]] : palette.muted;
+    done
+      ? palette.good
+      : group[i] >= 0
+        ? tints[group[i]]
+        : ranges && ranges.length > 0
+          ? palette.visit
+          : palette.muted;
 
   if (mode === 'wheel') {
     drawWheel(

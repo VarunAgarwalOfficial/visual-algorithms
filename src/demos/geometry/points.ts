@@ -15,7 +15,7 @@ import { newSeed, seeded } from '../../core/random';
 import type { Stage } from '../../ui/canvas';
 import { button, checkbox, el, fieldset, select, slider } from '../../ui/dom';
 import { onDrag, type DragHandlers } from '../../ui/pointer';
-import { FONT } from '../../ui/font';
+import { FONT, SMALL } from '../../ui/font';
 
 /** Maps the 4:3 lattice world onto the canvas with one scale, centred. */
 export interface View {
@@ -74,11 +74,41 @@ export function labelPoints(
   prefix = '',
 ): void {
   if (points.length > limit) return;
-  ctx.font = `11px ${FONT}`;
+  ctx.font = `${SMALL}px ${FONT}`;
   ctx.fillStyle = colour;
   ctx.textAlign = 'left';
-  ctx.textBaseline = 'bottom';
-  points.forEach((p, i) => ctx.fillText(`${prefix}${i + 1}`, view.x(p.x) + 5, view.y(p.y) - 3));
+  ctx.textBaseline = 'top';
+  // At the small size, numbers of close points would run into each other, so each one takes
+  // the first free place around its point (above right, then the other corners and sides).
+  type Rect = [number, number, number, number];
+  const taken: Rect[] = points.map((p) => {
+    const x = view.x(p.x);
+    const y = view.y(p.y);
+    return [x - 4, y - 4, x + 4, y + 4];
+  });
+  const clear = (r: Rect) =>
+    taken.every((t) => r[2] <= t[0] || r[0] >= t[2] || r[3] <= t[1] || r[1] >= t[3]);
+  const h = SMALL;
+  points.forEach((p, i) => {
+    const text = `${prefix}${i + 1}`;
+    const w = ctx.measureText(text).width;
+    const x = view.x(p.x);
+    const y = view.y(p.y);
+    const spots: [number, number][] = [
+      [x + 5, y - h - 2],
+      [x - 5 - w, y - h - 2],
+      [x + 5, y + 2],
+      [x - 5 - w, y + 2],
+      [x + 7, y - h / 2],
+      [x - 7 - w, y - h / 2],
+      [x - w / 2, y - h - 6],
+      [x - w / 2, y + 6],
+    ];
+    const spot = spots.find(([sx, sy]) => clear([sx, sy, sx + w, sy + h])) ?? spots[0];
+    taken.push([spot[0], spot[1], spot[0] + w, spot[1] + h]);
+    ctx.fillText(text, spot[0], spot[1]);
+  });
+  ctx.textBaseline = 'alphabetic';
 }
 
 /** The URL fields the editor reads and writes. `pts` is '' for "generate from the seed". */

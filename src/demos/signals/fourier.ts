@@ -10,7 +10,7 @@ import { watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, prose, type Mount } from '../layout';
 import { sampleSvg } from './svg';
-import { FONT } from '../../ui/font';
+import { FONT, SMALL } from '../../ui/font';
 
 /** Samples taken along the outline. The DFT is O(N²), so this stays modest. */
 const SAMPLES = 512;
@@ -160,7 +160,7 @@ export const mount: Mount = (root, entry) => {
     const { palette } = theme;
     if (stroke.length === 0) {
       ctx.fillStyle = palette.muted;
-      ctx.font = `15px ${FONT}`;
+      ctx.font = `${SMALL}px ${FONT}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('Draw one continuous line. It closes when you let go.', width / 2, height / 2);

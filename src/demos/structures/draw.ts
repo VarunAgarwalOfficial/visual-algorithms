@@ -1,7 +1,7 @@
 import type { TreeLayout } from '../../core/structures/layout';
 import type { Role } from '../../core/structures/trace';
 import { hexToRgb, mix, type Palette } from '../../ui/theme';
-import { FONT } from '../../ui/font';
+import { FONT, SMALL, labelSize } from '../../ui/font';
 
 export interface Point {
   x: number;
@@ -28,8 +28,8 @@ export interface Box {
   h: number;
 }
 
-export const font = (px: number, bold = false) =>
-  `${bold ? '600 ' : ''}${Math.round(px * 10) / 10}px ${FONT}`;
+export const font = (size: number, bold = false) =>
+  `${bold ? '600 ' : ''}${labelSize(Math.round(size * 10) / 10)}px ${FONT}`;
 
 export function roleColour(palette: Palette, role: Role | undefined): string | undefined {
   if (role === 'compare') return palette.compare;
@@ -212,7 +212,7 @@ export function cellGrid(
   let rows = 1;
   while (box.w / Math.ceil(n / rows) < minCell && rows < 6) rows++;
   const perRow = Math.ceil(n / rows);
-  const sub = subLabels ? 12 : 0;
+  const sub = subLabels ? SMALL + 5 : 0;
   const cell = Math.min(maxCell, box.w / perRow, (box.h - rows * sub) / rows);
   const rowHeight = cell + sub;
   const left = box.x + (box.w - perRow * cell) / 2;
@@ -241,7 +241,7 @@ export function drawCells(g: Gfx, cells: readonly Cell[], grid: CellGrid, key = 
     ctx.lineWidth = 1;
     ctx.strokeRect(at.x - size / 2 + 0.5, at.y - size / 2 + 0.5, size - 1, size - 1);
     if (cell.sub !== undefined) {
-      label(ctx, cell.sub, at.x, at.y + size / 2 + 6.5, palette.muted, Math.min(10, px));
+      label(ctx, cell.sub, at.x, at.y + size / 2 + SMALL / 2 + 3, palette.muted, SMALL);
     }
   });
   // Outlines of highlighted cells go on top of their neighbours' borders.

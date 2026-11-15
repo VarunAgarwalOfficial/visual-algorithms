@@ -7,6 +7,7 @@ import { watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { clean, drawLetters, drawTable, FONT, glyph, phases, type Cell } from './table';
+import { labelSize } from '../../ui/font';
 
 const MAX = 10;
 const PRESETS = [
@@ -165,7 +166,7 @@ export const mount: Mount = (root, entry) => {
     const yA = height - stripH + stripH * 0.2;
     const yB = height - stripH + stripH * 0.8;
 
-    ctx.font = `${Math.max(8, Math.min(12, size * 0.75))}px ${FONT}`;
+    ctx.font = `${labelSize(Math.max(8, Math.min(12, size * 0.75)))}px ${FONT}`;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     ctx.fillStyle = palette.muted;

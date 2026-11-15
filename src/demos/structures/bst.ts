@@ -9,7 +9,17 @@ import { layoutTree } from '../../core/structures/layout';
 import { el, fieldset, select } from '../../ui/dom';
 import { urlState } from '../../ui/url';
 import { formula, legend, prose, stats, type Mount } from '../layout';
-import { contrast, disc, fitTree, label, line, roleColour, roleStyle, type Gfx } from './draw';
+import {
+  contrast,
+  disc,
+  fitTree,
+  font,
+  label,
+  line,
+  roleColour,
+  roleStyle,
+  type Gfx,
+} from './draw';
 import { keyOpCodec, keyOpsFieldset, opsDemo, presetSelect, record, refuse } from './shared';
 
 const MAX_KEY = 99;
@@ -52,6 +62,15 @@ export const mount: Mount = (root, entry) => {
     comparisons: 'Comparisons',
   });
   const compare = el('p', { class: 'note' });
+  /**
+   * How many operations built the example the page opens with. Rotations and
+   * comparisons are counted from the end of those, so before the reader acts
+   * they read 0: nothing of theirs has run yet.
+   */
+  let built = -1;
+  let baseRotations = 0;
+  /** The frames of the example's own building, for which nothing of the reader's is counted. */
+  let building = new Set<TreeFrame>();
 
   const demo = opsDemo<TreeFrame>({
     root,
@@ -63,6 +82,10 @@ export const mount: Mount = (root, entry) => {
     run(ops) {
       const tree = new SearchTree(variant());
       const recording = record(tree.frames, ops, (op) => apply(tree, op));
+      if (built < 0) built = ops.length;
+      const end = built < ops.length ? recording.starts[built] - 1 : recording.frames.length - 1;
+      baseRotations = recording.frames[Math.max(0, end)]?.rotations ?? 0;
+      building = new Set(recording.frames.slice(0, end + 1));
       keys = tree.inorder();
       const others = VARIANTS.map(({ id }) => {
         const other = id === tree.variant ? tree : new SearchTree(id);
@@ -92,8 +115,8 @@ export const mount: Mount = (root, entry) => {
       counters.set({
         size: frame.size,
         height: frame.height,
-        rotations: frame.rotations,
-        comparisons: frame.comparisons,
+        rotations: Math.max(0, frame.rotations - baseRotations),
+        comparisons: building.has(frame) ? 0 : frame.comparisons,
       });
     },
   });
@@ -170,12 +193,18 @@ export const mount: Mount = (root, entry) => {
       if (kind === 'avl' && r >= 9) {
         const b = node.balance;
         const sign = b > 0 ? `+${b}` : b < 0 ? `−${-b}` : '0';
-        // The label sits just under the node, between the edges to its children.
+        // The label sits just under the node, between the edges to its children, on a patch of
+        // the page so the edges do not run through it.
+        const y = p.y + r + Math.max(9, px - 1);
+        ctx.font = font(Math.max(9, px - 3), Math.abs(b) > 1);
+        const w = ctx.measureText(sign).width + 4;
+        ctx.fillStyle = palette.bg;
+        ctx.fillRect(p.x - w / 2, y - 9, w, 18);
         label(
           ctx,
           sign,
           p.x,
-          p.y + r + Math.max(7, px - 2),
+          y,
           Math.abs(b) > 1 ? palette.change : palette.muted,
           Math.max(9, px - 3),
           'center',

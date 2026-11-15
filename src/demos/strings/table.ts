@@ -1,5 +1,5 @@
 import { mix, type Palette } from '../../ui/theme';
-import { FONT, MONO } from '../../ui/font';
+import { FONT, labelSize } from '../../ui/font';
 
 /** Shared drawing for the dynamic-programming tables in this section. */
 
@@ -97,11 +97,11 @@ export function drawTable(
   // Headers.
   const [curRow, curCol] = spec.current ?? [-1, -1];
   for (let c = 0; c < cols; c++) {
-    ctx.font = `${c === curCol ? '600 ' : ''}${colSize}px ${FONT}`;
+    ctx.font = `${c === curCol ? '600 ' : ''}${labelSize(colSize)}px ${FONT}`;
     ctx.fillStyle = c === curCol ? palette.change : palette.ink;
     ctx.fillText(spec.colHead[c], cellX(c) + cw / 2, top - ch / 2);
     if (spec.indices) {
-      ctx.font = `${headSize * 0.68}px ${FONT}`;
+      ctx.font = `${labelSize(headSize * 0.68)}px ${FONT}`;
       ctx.fillStyle = palette.muted;
       ctx.fillText(String(c), cellX(c) + cw / 2, top - ch * (1 + strip / 2));
     }
@@ -114,11 +114,11 @@ export function drawTable(
       ctx.fillStyle = colour;
       ctx.fillRect(left - width, cellY(r) + 2, Math.max(2, cw * 0.12), ch - 4);
     }
-    ctx.font = `${r === curRow ? '600 ' : ''}${Math.min(headSize, (width * 0.9) / (label.length * 0.56 || 1))}px ${FONT}`;
+    ctx.font = `${r === curRow ? '600 ' : ''}${labelSize(Math.min(headSize, (width * 0.9) / (label.length * 0.56 || 1)))}px ${FONT}`;
     ctx.fillStyle = r === curRow ? palette.change : palette.ink;
     ctx.fillText(label, left - width / 2 + (colour ? cw * 0.06 : 0), cellY(r) + ch / 2);
     if (spec.indices) {
-      ctx.font = `${headSize * 0.68}px ${FONT}`;
+      ctx.font = `${labelSize(headSize * 0.68)}px ${FONT}`;
       ctx.fillStyle = palette.muted;
       ctx.fillText(String(r), left - width - (cw * strip) / 2, cellY(r) + ch / 2);
     }
@@ -182,7 +182,7 @@ export function drawTable(
   }
 
   // Values.
-  ctx.font = `${size}px ${FONT}`;
+  ctx.font = `${labelSize(size)}px ${FONT}`;
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const text = spec.value(r, c);
@@ -253,7 +253,7 @@ export function drawLetters(
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = `${size}px ${MONO}`;
+  ctx.font = `${labelSize(size)}px ${FONT}`;
   letters.forEach((ch, i) => {
     ctx.fillStyle = colour(i);
     ctx.fillText(glyph(ch), x + slot * (i + 0.5), y);

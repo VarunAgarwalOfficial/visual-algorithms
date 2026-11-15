@@ -24,11 +24,14 @@ if [ -z "$ids" ]; then
   ids=$(agent-browser eval "[...document.querySelectorAll('a.card')].map(a => a.getAttribute('href').slice(2)).join(' ')" | tr -d '"')
 fi
 
-# Moves a trace player's Step slider to 60% of its range; simulations have none and just run.
+# Moves a trace player's step slider to 60% of its range; simulations have none and are started with Play.
 seek="(() => {
-  const field = [...document.querySelectorAll('.panel .field')].find((f) => f.querySelector('label')?.textContent === 'Step');
-  const input = field?.querySelector('input');
-  if (!input || Number(input.max) <= 1) return 'running';
+  const field = [...document.querySelectorAll('.field')].find((f) => /^Steps? /.test(f.querySelector('label')?.textContent ?? '') && f.querySelector('input[type=range]'));
+  const input = field?.querySelector('input[type=range]');
+  if (!input || Number(input.max) <= 1) {
+    [...document.querySelectorAll('main button.primary')].find((b) => b.textContent === 'Play')?.click();
+    return 'running';
+  }
   input.value = String(Math.round(Number(input.max) * 0.6));
   input.dispatchEvent(new Event('input', { bubbles: true }));
   return 'seeked';

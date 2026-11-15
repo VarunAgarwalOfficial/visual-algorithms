@@ -21,7 +21,7 @@ import { tracePlayer } from '../../ui/player';
 import { onDrag } from '../../ui/pointer';
 import { mix, watchPalette } from '../../ui/theme';
 import { phoneDefault, urlState } from '../../ui/url';
-import { FONT } from '../../ui/font';
+import { FONT, labelSize } from '../../ui/font';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 
 type Preset = 'random' | 'maze' | 'empty';
@@ -201,8 +201,8 @@ export const mount: Mount = (root, entry) => {
   /** The key lists only the kinds of cell this grid and search can show. */
   function showKey() {
     const items: [string, string][] = [
-      ['var(--canvas-accent)', 'S: start'],
-      ['var(--canvas-change)', 'G: goal'],
+      ['var(--canvas-ink)', 'S: start'],
+      ['var(--canvas-ink)', 'G: goal'],
       ['color-mix(in srgb, var(--canvas-ink) 70%, var(--canvas-bg))', 'Wall'],
     ];
     if (grid.cells.includes(MUD)) {
@@ -296,7 +296,8 @@ export const mount: Mount = (root, entry) => {
     for (let i = 0; i < cells.length; i++) {
       let colour: string | undefined;
       if (cells[i] === WALL) colour = wall;
-      else if (state[i] === 1) colour = palette.compare;
+      // Untouched, nothing is waiting yet; the start is only marked by its letter.
+      else if (state[i] === 1 && cursor > 0) colour = palette.compare;
       else if (state[i] === 2) colour = fromGoal[i] ? otherSide : palette.visit;
       else if (scanned[i]) colour = scan;
       else if (cells[i] === MUD) colour = palette.faint;
@@ -356,7 +357,7 @@ export const mount: Mount = (root, entry) => {
       ctx.stroke();
     } else if (cursor > 0) {
       const node = result.steps[cursor - 1].node;
-      ctx.strokeStyle = palette.change;
+      ctx.strokeStyle = palette.accent;
       ctx.lineWidth = 2;
       ctx.strokeRect(px(node % cols) + 1, py(Math.floor(node / cols)) + 1, cell - 2, cell - 2);
     }
@@ -372,15 +373,16 @@ export const mount: Mount = (root, entry) => {
       ctx.strokeStyle = palette.bg;
       ctx.stroke();
       ctx.fillStyle = palette.bg;
-      ctx.font = `600 ${Math.max(8, Math.round(r * 1.2))}px ${FONT}`;
+      ctx.font = `600 ${labelSize(Math.max(8, Math.round(r * 1.2)))}px ${FONT}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(letter, x, y + 0.5);
       ctx.textAlign = 'left';
       ctx.textBaseline = 'alphabetic';
     };
-    marker(start, palette.accent, 'S');
-    marker(goal, palette.change, 'G');
+    // Start and goal are named by their letters, in the ink: they are places, not states.
+    marker(start, palette.ink, 'S');
+    marker(goal, palette.ink, 'G');
   }
 
   function update() {
@@ -390,7 +392,8 @@ export const mount: Mount = (root, entry) => {
     const found = result.path.length > 0;
     counters.set({
       expanded: cursor,
-      frontier,
+      // Before the first step nothing has been reached: the start joins the waiting list when the search begins.
+      frontier: cursor === 0 ? 0 : frontier,
       steps: done && found ? result.path.length - 1 : '–',
       cost: done && found ? format(result.cost) : '–',
     });

@@ -9,7 +9,7 @@ import {
 import type { Point } from '../../core/point';
 import { onDrag } from '../../ui/pointer';
 import { mix, type Palette } from '../../ui/theme';
-import { FONT } from '../../ui/font';
+import { FONT, SMALL, labelSize } from '../../ui/font';
 
 /** Shared drawing and editing for the node-link graph demos. */
 
@@ -148,7 +148,7 @@ export function drawGraph(
   }
 
   // Labels sit on a patch of background so they stay readable where edges cross.
-  ctx.font = `11px ${FONT}`;
+  ctx.font = `${SMALL}px ${FONT}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   for (const i of order) {
@@ -185,13 +185,13 @@ export function drawGraph(
     ctx.strokeStyle = s.stroke;
     ctx.stroke();
     if (s.text) {
-      ctx.font = `600 ${Math.round(Math.max(10, r * 0.95))}px ${FONT}`;
+      ctx.font = `600 ${labelSize(Math.round(Math.max(10, r * 0.95)))}px ${FONT}`;
       ctx.fillStyle = palette.ink;
       ctx.fillText(s.text, x, y + 0.5);
     }
     if (s.sub) {
       // Put the note on the side of the node with the most room between edges.
-      ctx.font = `11px ${FONT}`;
+      ctx.font = `${SMALL}px ${FONT}`;
       const width = ctx.measureText(s.sub).width + 4;
       const place = (angle: number) => {
         const reach =
@@ -249,7 +249,7 @@ export function drawChips(
   title: string,
   chips: readonly Chip[],
 ): void {
-  ctx.font = `11px ${FONT}`;
+  ctx.font = `${SMALL}px ${FONT}`;
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
   ctx.fillStyle = palette.muted;
@@ -258,7 +258,7 @@ export function drawChips(
   const left = box.x + ctx.measureText(title).width + 8;
   const size = Math.min(box.height - 4, (box.x + box.width - left) / Math.max(1, chips.length));
   ctx.textAlign = 'center';
-  ctx.font = `600 ${Math.max(8, Math.min(11, size * 0.6))}px ${FONT}`;
+  ctx.font = `600 ${labelSize(Math.max(8, Math.min(11, size * 0.6)))}px ${FONT}`;
   chips.forEach((chip, i) => {
     const x = left + i * size;
     ctx.fillStyle = chip.fill;
@@ -271,7 +271,7 @@ export function drawChips(
   });
   if (chips.length === 0) {
     ctx.textAlign = 'left';
-    ctx.font = `11px ${FONT}`;
+    ctx.font = `${SMALL}px ${FONT}`;
     ctx.fillStyle = palette.muted;
     ctx.fillText('empty', left, mid + 0.5);
   }

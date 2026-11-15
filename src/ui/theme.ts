@@ -12,7 +12,7 @@ export interface Palette {
   good: string;
   /** Already explored. */
   visit: string;
-  /** Six categorical colours for groups (components, clusters, runs). */
+  /** Four colours for telling groups apart (components, clusters, runs): the four meaning colours again. */
   series: readonly string[];
 }
 
@@ -20,7 +20,7 @@ export type ThemeChoice = 'auto' | 'light' | 'dark';
 
 const STORAGE_KEY = 'theme';
 const CHANGE_EVENT = 'themechange';
-const SERIES = 6;
+const SERIES = 4;
 
 function read(): Palette {
   const style = getComputedStyle(document.documentElement);
@@ -48,13 +48,18 @@ function read(): Palette {
   return palette;
 }
 
-/** Converts a computed "rgb(r, g, b)" colour to #rrggbb. */
+/** Converts a computed "rgb(r, g, b)" or "color(srgb r g b)" (from color-mix) colour to #rrggbb. */
 function toHex(colour: string): string | undefined {
-  const parts = colour.match(/[\d.]+/g);
+  const unit = colour.startsWith('color(srgb');
+  const parts = colour.replace('color(srgb', '').match(/[\d.]+/g);
   if (!parts || parts.length < 3) return undefined;
   return `#${parts
     .slice(0, 3)
-    .map((p) => Math.round(Number(p)).toString(16).padStart(2, '0'))
+    .map((p) =>
+      Math.round(Math.max(0, Math.min(255, Number(p) * (unit ? 255 : 1))))
+        .toString(16)
+        .padStart(2, '0'),
+    )
     .join('')}`;
 }
 

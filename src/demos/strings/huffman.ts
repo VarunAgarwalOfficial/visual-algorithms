@@ -6,8 +6,8 @@ import { tracePlayer } from '../../ui/player';
 import { mix, prefersReducedMotion, watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
-import { clean, FONT, glyph, MONO } from './table';
-import { drawHint } from '../../ui/font';
+import { clean, FONT, glyph } from './table';
+import { drawHint, labelSize } from '../../ui/font';
 
 const MAX_TEXT = 60;
 const MAX_SYMBOLS = 12;
@@ -248,7 +248,7 @@ export const mount: Mount = (root, entry) => {
 
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
-    ctx.font = `${Math.max(9, Math.min(12, width * 0.028))}px ${FONT}`;
+    ctx.font = `${labelSize(Math.max(9, Math.min(12, width * 0.028)))}px ${FONT}`;
     ctx.fillStyle = palette.muted;
     ctx.fillText(
       queue.length > 1 ? 'Queue of trees, lightest first →' : 'Huffman tree',
@@ -276,7 +276,7 @@ export const mount: Mount = (root, entry) => {
         const mx = (p.x + c.x) / 2;
         const my = (p.y + c.y) / 2;
         const side = bit === 0 ? -1 : 1;
-        ctx.font = `${small}px ${MONO}`;
+        ctx.font = `${labelSize(small)}px ${FONT}`;
         ctx.textAlign = 'center';
         ctx.fillStyle = finished ? palette.ink : palette.muted;
         ctx.fillText(String(bit), mx + side * (small * 0.75), my - small * 0.35);
@@ -313,21 +313,21 @@ export const mount: Mount = (root, entry) => {
       ctx.textAlign = 'center';
       ctx.fillStyle = palette.ink;
       if (leaf) {
-        ctx.font = `600 ${Math.max(8, radius * 1.15)}px ${MONO}`;
+        ctx.font = `600 ${labelSize(Math.max(8, radius * 1.15))}px ${FONT}`;
         ctx.fillText(glyph(node.symbol ?? ''), p.x, p.y + 0.5);
-        ctx.font = `${small}px ${FONT}`;
+        ctx.font = `${labelSize(small)}px ${FONT}`;
         ctx.fillStyle = palette.muted;
         ctx.fillText(String(node.weight), p.x, p.y + radius + small * 0.9);
         if (finished) {
           const code = h.codes.get(node.symbol ?? '') ?? '';
           const fit = Math.min(small, (slotWidth * 0.86) / (Math.max(1, code.length) * 0.6));
-          ctx.font = `${Math.max(6, fit)}px ${MONO}`;
+          ctx.font = `${labelSize(Math.max(6, fit))}px ${FONT}`;
           ctx.fillStyle = palette.ink;
           ctx.fillText(code, p.x, p.y + radius + small * 2.1);
         }
       } else {
         const label = String(node.weight);
-        ctx.font = `${Math.max(7, Math.min(radius * 1.05, (radius * 3) / label.length))}px ${FONT}`;
+        ctx.font = `${labelSize(Math.max(7, Math.min(radius * 1.05, (radius * 3) / label.length)))}px ${FONT}`;
         ctx.fillText(label, p.x, p.y + 0.5);
       }
     }

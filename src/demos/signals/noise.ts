@@ -14,7 +14,7 @@ import { onDrag } from '../../ui/pointer';
 import { hexToRgb, watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
-import { FONT } from '../../ui/font';
+import { FONT, SMALL } from '../../ui/font';
 
 const KINDS: readonly { id: NoiseKind; name: string }[] = [
   { id: 'perlin', name: 'Perlin (square lattice)' },
@@ -454,7 +454,7 @@ export const mount: Mount = (root, entry) => {
     ctx.fill();
 
     ctx.fillStyle = palette.muted;
-    ctx.font = `12px ${FONT}`;
+    ctx.font = `${SMALL}px ${FONT}`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillText('Slice along the dashed row', 6, top + 4);

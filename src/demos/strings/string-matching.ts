@@ -12,8 +12,8 @@ import { tracePlayer } from '../../ui/player';
 import { mix, watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
-import { clean, FONT, glyph, MONO } from './table';
-import { drawHint } from '../../ui/font';
+import { clean, FONT, glyph } from './table';
+import { drawHint, labelSize } from '../../ui/font';
 
 const MAX_TEXT = 28;
 const MAX_PATTERN = 8;
@@ -161,7 +161,7 @@ export const mount: Mount = (root, entry) => {
 
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
-    ctx.font = `${Math.max(9, Math.min(13, width * 0.03))}px ${FONT}`;
+    ctx.font = `${labelSize(Math.max(9, Math.min(13, width * 0.03)))}px ${FONT}`;
     ctx.fillStyle = palette.muted;
     const title =
       m === 0
@@ -189,7 +189,7 @@ export const mount: Mount = (root, entry) => {
       ctx.lineWidth = 1;
       ctx.strokeRect(x + 0.5, y + 0.5, cell - 1, cellH - 1);
       ctx.fillStyle = ink;
-      ctx.font = `${letter}px ${MONO}`;
+      ctx.font = `${labelSize(letter)}px ${FONT}`;
       ctx.textAlign = 'center';
       ctx.fillText(glyph(ch), x + cell / 2, y + cellH / 2 + 0.5);
     };
@@ -210,7 +210,7 @@ export const mount: Mount = (root, entry) => {
 
     // Row labels.
     ctx.textAlign = 'left';
-    ctx.font = `${small}px ${FONT}`;
+    ctx.font = `${labelSize(small)}px ${FONT}`;
     ctx.fillStyle = palette.muted;
     ctx.fillText(building ? 'P' : 'T', pad, yTop + cellH / 2);
     ctx.fillText('P', pad, yBottom + cellH / 2);
@@ -224,7 +224,7 @@ export const mount: Mount = (root, entry) => {
       const x = x0 + i * cell;
       box(x, yTop, top[i], fillFor(i), palette.faint, palette.ink);
       if (cell >= 13 || i % 5 === 0) {
-        ctx.font = `${small * 0.9}px ${FONT}`;
+        ctx.font = `${labelSize(small * 0.9)}px ${FONT}`;
         ctx.fillStyle = i === compareAt ? palette.ink : palette.muted;
         ctx.fillText(String(i), x + cell / 2, yTop - small * 0.9);
       }
@@ -288,7 +288,7 @@ export const mount: Mount = (root, entry) => {
           ctx.fillStyle = tint(colour, 0.45);
           ctx.fillRect(x + 1, y - small * 0.8, cell - 2, small * 1.6);
         }
-        ctx.font = `${k === active ? '600 ' : ''}${small}px ${FONT}`;
+        ctx.font = `${k === active ? '600 ' : ''}${labelSize(small)}px ${FONT}`;
         ctx.fillStyle = k === active ? palette.ink : palette.muted;
         ctx.fillText(String(table[k]), x + cell / 2, y + 0.5);
       }
@@ -307,8 +307,8 @@ export const mount: Mount = (root, entry) => {
     if (step?.box) {
       const [l, r] = step.box;
       const y = yTop - small * 2;
-      ctx.strokeStyle = palette.series[4];
-      ctx.fillStyle = palette.series[4];
+      ctx.strokeStyle = palette.ink;
+      ctx.fillStyle = palette.ink;
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(x0 + l * cell + 1, y + 4);
@@ -316,7 +316,7 @@ export const mount: Mount = (root, entry) => {
       ctx.lineTo(x0 + r * cell - 1, y);
       ctx.lineTo(x0 + r * cell - 1, y + 4);
       ctx.stroke();
-      ctx.font = `${small}px ${FONT}`;
+      ctx.font = `${labelSize(small)}px ${FONT}`;
       ctx.textAlign = 'left';
       ctx.fillText(`box [${l}, ${r})`, x0 + l * cell, y - small * 0.8);
       if (step.kind === 'shift') {
@@ -418,7 +418,7 @@ export const mount: Mount = (root, entry) => {
       ['var(--canvas-change)', 'Mismatch / value written'],
       ['var(--canvas-compare)', 'Letters compared / value read'],
       ['var(--canvas-accent)', 'Underline: a whole match'],
-      ['var(--canvas-series-5)', 'Z-box'],
+      ['var(--canvas-ink)', 'Z-box'],
     ]),
   );
 

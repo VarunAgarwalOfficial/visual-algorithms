@@ -33,9 +33,9 @@ The three original ideas are described below.
 - A demo's settings and input are kept in the URL, so "Copy link" shares
   exactly what is on screen.
 - Keys: `/` search, Space or `K` play/pause, arrows or `.` `,` step and back,
-  `R` reset, `[` `]` slower and faster, `N` `P` next and previous demo, `T`
-  theme, `H` home, `?` the list.
-- The theme follows the system, or can be forced light or dark.
+  `R` reset, `[` `]` slower and faster, `N` `P` next and previous demo, `H`
+  home, `?` the list.
+- Light or dark follows the system.
 - A link reproduces a simulation on any screen: boids, collisions and cloth run
   in a fixed 800 × 600 world that is scaled to fit. Painted walls, drawn cells
   and cloth cuts are in the link. Things done by hand to a running simulation
@@ -112,24 +112,46 @@ at all.
 
 ## The look
 
-One stylesheet, `src/style.css`, holds the whole visual system as custom
-properties: a five-step type scale (12, 14, 16, 20, 28 px), a seven-step spacing
-scale (4 to 48 px), one control height (40 px, 44 px on a phone), and one palette
-with light and dark values. Canvas colours come from the same file through
-`src/ui/theme.ts`, and mean the same thing in every demo:
+The pages use the owner's site look, "Editorial". Its tokens are in
+`src/styles/c-editorial-tokens.css`, copied unchanged from the website; the
+fonts it names (Newsreader for text and canvas labels, IBM Plex Mono for code,
+CM Web Serif for mathematics) and their licences are in `public/fonts`.
+`src/style.css` maps this project's own variables onto those tokens and adds
+nothing of its own beyond layout: page and ink colours in light and dark, the
+type sizes (17, 20, 22, 28 and 44 px, 36 px on a phone), spacing, measure,
+rules and the focus ring. The light or dark scheme follows the system. There
+are no shadows, gradients, coloured panels or badges; regions are separated by
+space and the rule colour. The one filled control on a page is its first
+action; other buttons are outlined, and a switched-on toggle gets a heavier
+outline rather than a fill.
 
-| Colour | Meaning                                |
-| ------ | -------------------------------------- |
-| amber  | being read or compared                 |
-| red    | being written, moved or rejected       |
-| green  | finished, found, or part of the answer |
-| blue   | already explored                       |
-| teal   | the current item, and the site accent  |
+Canvas colours come from the same file through `src/ui/theme.ts`, and mean the
+same thing in every demo (and in the other five tools restyled with it):
 
-Text is set in IBM Plex Sans and IBM Plex Mono, bundled in `src/fonts` under the
-SIL Open Font License (`src/fonts/OFL.txt`), so pages and canvas labels look the
-same on every machine. Only the Latin subset is bundled; a few mathematical
-symbols fall back to a system font.
+| Role in the code | Meaning                                             | Site token                |
+| ---------------- | --------------------------------------------------- | ------------------------- |
+| compare          | being read or compared                              | `--site-mean-measured`    |
+| change           | being written, moved, swapped or rejected           | `--site-mean-against`     |
+| good             | finished, found, or part of the answer              | `--site-mean-proved`      |
+| accent           | the current item or frontier                        | `--site-mean-open`        |
+| visit            | already explored: a grey tint, not a meaning colour | muted mixed into the page |
+
+Where a picture used to draw more than four colours, it now uses these four
+and tells the rest apart by shape, pattern, position or a label: the group
+colours (`series`) are cut from six to four, the Z-box in string matching is
+drawn in the ink, start and goal in pathfinding are ink discs with their
+letters, and the ranges in the sorting picture are all drawn in the muted ink
+with their names. All five colours, the text and the muted text meet WCAG AA
+(4.5:1) against the page in both schemes; the visited tint is a background
+area at about 1.5:1 and is always named in the legend.
+
+What the new typeface moved: labels in pictures are never under 17 px, so value
+labels on narrow sorting bars alternate between two rows, the caption on the
+sorting canvas wraps onto more lines instead of being squeezed, point numbers
+in the geometry demos take the first free spot around their point, the index
+row under array cells is taller, and AVL balance labels sit on a patch of the
+page so edges do not cross them. On a phone the catalogue is one column, with
+each picture above its text.
 
 Canvases are sized from the device-pixel box, so lines stay sharp on high-DPI
 screens and when the browser zoom changes.
@@ -172,10 +194,10 @@ src/demos/     one folder per section, one module per demo, loaded on demand
   registry.ts  the sections; each folder's index.ts lists its demos
   layout.ts    the shared page skeleton
 src/ui/        canvas sizing, playback, URL state, pointer input, controls, theme
-src/main.ts    router, search, theme switch and keyboard shortcuts
+src/main.ts    router, search and keyboard shortcuts
 src/home.ts    the index page and the not-found page
-src/fonts/     IBM Plex Sans and Mono (woff2) and their licence
-public/        favicon, 404.html, preview image, thumbnails
+src/styles/    the site's look tokens, copied unchanged from the website
+public/        favicon, 404.html, preview image, thumbnails, fonts and licences
 ```
 
 An ESLint rule keeps `src/core` from importing UI code or touching browser
@@ -184,7 +206,7 @@ globals.
 ## Accessibility
 
 All controls are native form elements and work from the keyboard. Colours follow
-the system light or dark scheme unless overridden. With
+the system light or dark scheme. With
 `prefers-reduced-motion`, the animated demos start paused on a complete frame
 and can be advanced with Step or Play. Drawing and dragging on a canvas need a
 pointer; presets, typed input and Randomise do not. The layout works down to

@@ -17,7 +17,7 @@ import { watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { clampInt, dot, worldView } from './points';
-import { FONT } from '../../ui/font';
+import { FONT, SMALL } from '../../ui/font';
 
 const MAX_SEGMENTS = 24;
 
@@ -203,7 +203,7 @@ export const mount: Mount = (root, entry) => {
       if (i === hot) dot(ctx, view.x(p.x), view.y(p.y), 6, 'transparent', palette.accent);
     });
     if (segments.length <= 16 || width > 500) {
-      ctx.font = `11px ${FONT}`;
+      ctx.font = `${SMALL}px ${FONT}`;
       ctx.fillStyle = palette.muted;
       ctx.textBaseline = 'bottom';
       segments.forEach((s, i) => {

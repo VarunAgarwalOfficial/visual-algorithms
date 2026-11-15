@@ -18,7 +18,7 @@ import { mix, watchPalette } from '../../ui/theme';
 import { phoneDefault, urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { clamp, clampInt, every, fit, meter, short, toWorld } from './common';
-import { FONT } from '../../ui/font';
+import { FONT, SMALL } from '../../ui/font';
 
 /** The box is the same whatever the canvas, so a link starts the same discs everywhere. */
 const WIDTH = 800;
@@ -278,7 +278,7 @@ export const mount: Mount = (root, entry) => {
     ctx.strokeStyle = palette.muted;
     ctx.lineWidth = 1;
     ctx.strokeRect(left + 0.5, top + 0.5, w, h);
-    ctx.font = `12px ${FONT}`;
+    ctx.font = `${SMALL}px ${FONT}`;
     ctx.fillStyle = palette.ink;
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';

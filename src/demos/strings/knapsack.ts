@@ -7,6 +7,7 @@ import { mix, watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { drawTable, FONT, phases, type Cell } from './table';
+import { labelSize } from '../../ui/font';
 
 const MAX_ITEMS = 6;
 const MAX_CAPACITY = 15;
@@ -203,7 +204,7 @@ export const mount: Mount = (root, entry) => {
 
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
-    ctx.font = `${size}px ${FONT}`;
+    ctx.font = `${labelSize(size)}px ${FONT}`;
     ctx.fillStyle = palette.muted;
     ctx.fillText('Knapsack', pad, barY + barH / 2);
 
@@ -238,7 +239,7 @@ export const mount: Mount = (root, entry) => {
     }
     ctx.stroke();
     ctx.fillStyle = palette.muted;
-    ctx.font = `${Math.max(7, size * 0.85)}px ${FONT}`;
+    ctx.font = `${labelSize(Math.max(7, size * 0.85))}px ${FONT}`;
     ctx.fillText('0', barX, barY + barH + size);
     ctx.fillText(String(settings.cap), barX + barW, barY + barH + size);
     if (current && w > 0 && w < settings.cap) {

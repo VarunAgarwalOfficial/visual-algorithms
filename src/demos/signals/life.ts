@@ -15,7 +15,7 @@ import { hexToRgb, watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, prose, stats, type Mount } from '../layout';
 import { snapshotRing } from './ring';
-import { FONT } from '../../ui/font';
+import { FONT, SMALL } from '../../ui/font';
 
 const COLS = 96;
 const ROWS = 72;
@@ -301,7 +301,7 @@ export const mount: Mount = (root, entry) => {
     ctx.lineJoin = 'round';
     ctx.stroke();
     ctx.fillStyle = palette.muted;
-    ctx.font = `11px ${FONT}`;
+    ctx.font = `${SMALL}px ${FONT}`;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'top';
     ctx.fillText(`population, peak ${top}`, width - pad, 0);

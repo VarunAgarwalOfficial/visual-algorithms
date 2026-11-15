@@ -26,7 +26,7 @@ required('.skip').addEventListener('click', (event) => {
 const themeColour = document.querySelector('meta[name="theme-color"]');
 function paintChrome() {
   // The browser's own chrome (address bar on a phone) follows the page.
-  themeColour?.setAttribute('content', isDark() ? '#131516' : '#f6f5f1');
+  themeColour?.setAttribute('content', isDark() ? '#1a1918' : '#f6f5f2');
 }
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintChrome);
 setTheme('auto');

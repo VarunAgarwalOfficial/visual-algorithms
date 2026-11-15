@@ -16,7 +16,7 @@ import { watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { clampInt, dot, pointEditor, worldView } from './points';
-import { FONT } from '../../ui/font';
+import { FONT, SMALL } from '../../ui/font';
 
 /** Playback moves t in this many equal steps from 0 to 1. */
 const T_STEPS = 200;
@@ -226,7 +226,7 @@ export const mount: Mount = (root, entry) => {
       });
     }
 
-    ctx.font = `11px ${FONT}`;
+    ctx.font = `${SMALL}px ${FONT}`;
     ctx.textBaseline = 'bottom';
     ctx.textAlign = 'left';
     control.forEach((p, i) => {

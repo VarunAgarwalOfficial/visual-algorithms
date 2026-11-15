@@ -7,7 +7,7 @@ import { watchPalette, type Palette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { clean, drawLetters, drawTable, FONT, glyph, phases, type Cell } from './table';
-import { MONO } from '../../ui/font';
+import { labelSize } from '../../ui/font';
 
 const MAX = 10;
 const PRESETS = [
@@ -205,7 +205,7 @@ export const mount: Mount = (root, entry) => {
     const yB = height - stripH + stripH * 0.78;
     const yMid = (yA + yB) / 2;
 
-    ctx.font = `${Math.max(8, Math.min(12, size * 0.75))}px ${FONT}`;
+    ctx.font = `${labelSize(Math.max(8, Math.min(12, size * 0.75)))}px ${FONT}`;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     ctx.fillStyle = palette.muted;
@@ -238,7 +238,7 @@ export const mount: Mount = (root, entry) => {
       const op = ops[k];
       const colour = opColour(palette, op.kind);
       const cx = x0 + slot * (k + 0.5);
-      ctx.font = `${size}px ${MONO}`;
+      ctx.font = `${labelSize(size)}px ${FONT}`;
       ctx.fillStyle = op.from ? (op.kind === 'match' ? palette.ink : colour) : palette.muted;
       ctx.fillText(op.from ? glyph(op.from) : '–', cx, yA);
       ctx.fillStyle = op.to ? (op.kind === 'match' ? palette.ink : colour) : palette.muted;
