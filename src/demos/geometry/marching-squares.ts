@@ -252,6 +252,11 @@ export const mount: Mount = (root, entry) => {
       ctx.strokeStyle = palette.compare;
       ctx.lineWidth = 2;
       ctx.strokeRect(x, y, cell, cell);
+      if (position === 0) {
+        status.textContent =
+          'Nothing has run yet. The shading is a height at every grid point, darker for higher. Press Play to draw the contour lines (lines of equal height) one square at a time, or paint on the picture to change the heights.';
+        return;
+      }
       const [tl, tr, br, bl] = corners(current);
       const mark = (cx: number, cy: number, v: number) => {
         ctx.beginPath();
@@ -519,7 +524,8 @@ export const mount: Mount = (root, entry) => {
   const length = (cols + 1) * (rows + 1);
   if (settings.f) values = unpackCells(settings.f.slice(0, length * 2), length);
   else loadPreset();
-  retrace(true);
+  // The heights are shown, but no contour line is drawn until Play.
+  retrace(false);
 
   return () => {
     player.dispose();

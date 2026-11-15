@@ -1,6 +1,5 @@
 import { createLoop } from './canvas';
 import { button, el, fieldset, slider } from './dom';
-import { prefersReducedMotion } from './theme';
 
 /**
  * Playback controls shared by every demo. There are two kinds:
@@ -110,11 +109,11 @@ export function tracePlayer(options: TraceOptions): TracePlayer {
     },
     'primary',
   );
-  const stepButton = button('Step', () => {
+  const stepButton = button('Step forward', () => {
     setPlaying(false);
     move(position + 1);
   });
-  const backButton = button('Back', () => {
+  const backButton = button('Step back', () => {
     setPlaying(false);
     move(position - 1);
   });
@@ -123,11 +122,11 @@ export function tracePlayer(options: TraceOptions): TracePlayer {
     move(0);
   });
   const scrub = slider({
-    label: 'Step',
+    label: 'Steps done',
     min: 0,
     max: 1,
     value: 0,
-    format: (v) => `${v} / ${length}`,
+    format: (v) => `${v} of ${length}`,
     onInput(value) {
       setPlaying(false);
       move(value);
@@ -185,6 +184,7 @@ export function tracePlayer(options: TraceOptions): TracePlayer {
     },
   });
 
+  speedSlider.root.classList.add('speed');
   const root = fieldset(
     'Playback',
     el('div', { class: 'buttons' }, playButton, stepButton, backButton, resetButton),
@@ -227,6 +227,8 @@ export function tracePlayer(options: TraceOptions): TracePlayer {
 export interface SimPlayer extends Player {
   /** Forgets the saved snapshots, for when the demo changes its state itself (new input, reset). */
   clearHistory(): void;
+  /** False until the first step after loading or Reset, so the page can say nothing has run yet. */
+  readonly started: boolean;
 }
 
 export interface SimOptions<S> {
@@ -250,7 +252,7 @@ export interface SimOptions<S> {
   minSpeed?: number;
   maxSpeed?: number;
   onSpeed?(speed: number): void;
-  /** Start playing at once. Default: yes, unless the user prefers reduced motion. */
+  /** Start playing at once. Default: no; nothing moves until the person presses Play. */
   autoplay?: boolean;
 }
 
@@ -271,8 +273,10 @@ export function simPlayer<S>(options: SimOptions<S>): SimPlayer {
   let speed = Math.max(min, Math.min(max, options.speed ?? 1));
   let budget = 0;
   let history: S[] = [];
+  let started = false;
 
   function remember() {
+    started = true;
     if (!options.snapshot) return;
     history.push(options.snapshot());
     if (history.length > capacity) history.shift();
@@ -295,13 +299,13 @@ export function simPlayer<S>(options: SimOptions<S>): SimPlayer {
   });
 
   const playButton = button('Play', () => setPlaying(!playing), 'primary');
-  const stepButton = button('Step', () => {
+  const stepButton = button('Step forward', () => {
     setPlaying(false);
     remember();
     options.step(tick);
     options.draw();
   });
-  const backButton = button('Back', () => {
+  const backButton = button('Step back', () => {
     setPlaying(false);
     const last = history.pop();
     if (last === undefined) return;
@@ -312,6 +316,7 @@ export function simPlayer<S>(options: SimOptions<S>): SimPlayer {
   disable(backButton, true);
   const resetButton = button('Reset', () => {
     clearHistory();
+    started = false;
     options.reset?.();
     options.draw();
   });
@@ -353,6 +358,7 @@ export function simPlayer<S>(options: SimOptions<S>): SimPlayer {
     },
   });
 
+  speedSlider.root.classList.add('speed');
   const root = fieldset(
     'Playback',
     el(
@@ -367,12 +373,15 @@ export function simPlayer<S>(options: SimOptions<S>): SimPlayer {
   );
   root.classList.add('playback');
 
-  setPlaying(options.autoplay ?? !prefersReducedMotion());
+  setPlaying(options.autoplay ?? false);
 
   return {
     root,
     get playing() {
       return playing;
+    },
+    get started() {
+      return started;
     },
     play: () => setPlaying(true),
     pause: () => setPlaying(false),

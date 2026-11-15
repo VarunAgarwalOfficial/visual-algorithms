@@ -197,9 +197,11 @@ export const mount: Mount = (root, entry) => {
         strain: `${worst.toFixed(2)}×`,
         ms: timer.ms.toFixed(3),
       });
-      status.textContent = `Each step: one Verlet move for ${cloth.n} particles, then ${settings.iter} relaxation ${
-        settings.iter === 1 ? 'pass' : 'passes'
-      } over ${alive} links. The most stretched link is at ${worst.toFixed(2)} times its rest length.`;
+      status.textContent = player?.started
+        ? `Each step: one Verlet move for ${cloth.n} particles, then ${settings.iter} relaxation ${
+            settings.iter === 1 ? 'pass' : 'passes'
+          } over ${alive} links. The most stretched link is at ${worst.toFixed(2)} times its rest length.`
+        : `Nothing has run yet. The cloth is ${cloth.n} points joined by links that try to keep their length, hanging from pins along the top. Press Play to let it fall under gravity, then drag a point to pull it.`;
     }
   }
 

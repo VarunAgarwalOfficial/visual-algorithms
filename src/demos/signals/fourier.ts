@@ -35,11 +35,14 @@ const PRESETS = [
 type ShapeId = (typeof PRESETS)[number]['id'] | 'custom';
 
 export const mount: Mount = (root, entry) => {
-  const { canvas, panel, about } = buildLayout(
+  const { canvas, readout, panel, about } = buildLayout(
     root,
     entry,
     'Animation of rotating circles joined tip to tail, tracing the outline of a shape.',
   );
+
+  const status = el('p', { class: 'note' });
+  readout.append(status);
 
   const url = urlState({ shape: 'smiley', circles: 32, rings: true, outline: true, pts: '' });
   const settings = url.state;
@@ -70,8 +73,8 @@ export const mount: Mount = (root, entry) => {
 
   function restart() {
     time = 0;
-    // While paused (the default with reduced motion) show the finished drawing, not a blank canvas.
-    traced = player?.playing ? 0 : CURVE_POINTS;
+    // Nothing is drawn until Play: the faint outline shows the shape the pen will copy.
+    traced = 0;
     player?.clearHistory();
     draw();
   }
@@ -139,6 +142,17 @@ export const mount: Mount = (root, entry) => {
     ctx.arc(px(pen.x), py(pen.y), 3.5, 0, TAU);
     ctx.fillStyle = palette.accent;
     ctx.fill();
+    showStatus();
+  }
+
+  function showStatus() {
+    const circles = Math.min(settings.circles, epicycles.length);
+    status.textContent =
+      traced === 0 && time === 0
+        ? `Nothing has run yet. The thick faint line is the shape to copy. The ${circles} thin circles are chained tip to tail, and the dot on the last one is the pen. Press Play to watch the pen draw the shape as the circles turn.`
+        : traced >= CURVE_POINTS
+          ? `One full lap done: the pen's line is the shape as ${circles} circles can draw it. Fewer circles give a rougher copy.`
+          : `The pen has drawn ${Math.round((traced / CURVE_POINTS) * 100)}% of one lap with ${circles} circles.`;
   }
 
   function drawStroke() {

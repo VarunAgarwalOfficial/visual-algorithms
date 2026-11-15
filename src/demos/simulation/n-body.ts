@@ -334,7 +334,9 @@ export const mount: Mount = (root, entry) => {
         usesTree() && settings.used && selected >= 0
           ? ` The marked body's force is ${usedNodes + usedBodies} terms (${usedNodes} squares, ${usedBodies} single bodies) instead of ${bodies.n - 1}.`
           : '';
-      status.textContent = how + detail;
+      status.textContent = player?.started
+        ? how + detail
+        : `Nothing has run yet. Each dot is a star, and every star pulls on every other one by gravity. Press Play to set them moving, or click a star to mark it.`;
     }
   }
 

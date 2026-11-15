@@ -448,7 +448,7 @@ export const mount: Mount = (root, entry) => {
       });
       status.textContent =
         position === 0
-          ? 'Ready. The window will scan the image row by row.'
+          ? 'Nothing has run yet. Press Play to slide the window over the image row by row.'
           : `Pixel (${x}, ${y}): nine input pixels times nine flipped weights add up to ${fmt(value)}${
               position >= SIZE * SIZE ? '. All pixels done.' : '.'
             }`;
@@ -466,7 +466,8 @@ export const mount: Mount = (root, entry) => {
       sizes: `${N} samples, ${kernel.length} weights`,
     });
     if (position === 0) {
-      status.textContent = 'Ready. The kernel is flipped and waits at the left end.';
+      status.textContent =
+        'Nothing has run yet. The kernel (the small list of weights) waits at the left end; press Play to slide it along the signal.';
       return;
     }
     const terms: string[] = [];

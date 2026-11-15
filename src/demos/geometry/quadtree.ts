@@ -321,7 +321,7 @@ export const mount: Mount = (root, entry) => {
       });
       const info = built.last;
       status.textContent = !info
-        ? `Ready: ${points.length} points to insert. Press Play or Step.`
+        ? `Nothing has run yet: ${points.length} points, none in the tree. Press Play to insert them, or Step forward for one at a time.`
         : info.splits > 0
           ? `Point ${position} overfills its cell (more than ${settings.cap}): ${info.splits === 1 ? 'the cell splits' : `it takes ${info.splits} splits`} into quarters, and it lands at depth ${info.depth}.`
           : `Point ${position} goes into a leaf at depth ${info.depth}, which has room.`;
@@ -340,7 +340,8 @@ export const mount: Mount = (root, entry) => {
     });
     const event = state.current;
     if (!event) {
-      status.textContent = 'Ready. Press Play or Step to follow the query through the tree.';
+      status.textContent =
+        'Nothing has run yet. Press Play, or Step forward, to follow the search through the tree.';
     } else if (done) {
       status.textContent =
         mode() === 'range'
@@ -426,8 +427,8 @@ export const mount: Mount = (root, entry) => {
     ),
   );
 
+  // The query waits at its start, so the first press of Play shows it happen.
   retrace(false);
-  if (mode() !== 'build') player.seek(player.length);
 
   return () => {
     player.dispose();

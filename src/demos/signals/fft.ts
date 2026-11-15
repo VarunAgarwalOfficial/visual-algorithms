@@ -525,7 +525,7 @@ export const mount: Mount = (root, entry) => {
       });
       const step = position > 0 ? trace.steps[position - 1] : undefined;
       if (!step) {
-        status.textContent = `Ready. ${m} samples, so ${bits} stages of ${m / 2} butterflies each.`;
+        status.textContent = `Nothing has run yet. ${m} samples, so ${bits} stages of ${m / 2} butterflies (pairwise combine steps) each.`;
       } else if (step.type === 'swap') {
         const bin = (v: number) => v.toString(2).padStart(bits, '0');
         status.textContent = `Bit reversal: swap rows ${step.i} and ${step.j}, because ${bin(step.i)} read backwards is ${bin(step.j)}.`;

@@ -109,8 +109,8 @@ export const mount: Mount = (root, entry) => {
         trace.steps.length === 0
           ? 'The pattern is longer than the text, so there is nothing to compare.'
           : matcher() === 'naive'
-            ? 'Ready. The naive matcher tries every position and compares from the start of the pattern each time.'
-            : `Ready. Phase 1 builds the ${tableName()} table from the pattern alone; phase 2 scans the text.`;
+            ? 'Nothing has run yet. The naive matcher tries every position and compares from the start of the pattern each time.'
+            : `Nothing has run yet. Press Play: phase 1 builds the ${tableName()} table from the pattern alone; phase 2 scans the text.`;
     } else status.textContent = step.text;
 
     if (done && settings.pat.length > 0) {

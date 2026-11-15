@@ -1,9 +1,9 @@
 import './style.css';
-import type { DemoEntry } from './demos/layout';
+import { arrangeDemo, type DemoEntry } from './demos/layout';
 import { ALL_DEMOS, SECTIONS, searchDemos, sectionOf } from './demos/registry';
 import { SITE_TITLE, mountHome, mountNotFound, type Home } from './home';
 import { button, el } from './ui/dom';
-import { isDark, setTheme, themeChoice, type ThemeChoice } from './ui/theme';
+import { isDark, setTheme } from './ui/theme';
 import { hashParams, hashRoute } from './ui/url';
 
 function required<T extends HTMLElement>(selector: string): T {
@@ -21,24 +21,16 @@ required('.skip').addEventListener('click', (event) => {
   main.focus();
 });
 
-// --- Theme ---
+// --- Theme: the page follows the system setting; a host page that embeds it decides the rest. ---
 
-const THEME_LABELS: Record<ThemeChoice, string> = { auto: 'Auto', light: 'Light', dark: 'Dark' };
-const THEME_ORDER: readonly ThemeChoice[] = ['auto', 'light', 'dark'];
-const themeButton = button('', () => {
-  setTheme(THEME_ORDER[(THEME_ORDER.indexOf(themeChoice()) + 1) % THEME_ORDER.length]);
-  labelTheme();
-});
-themeButton.classList.add('quiet', 'theme');
-function labelTheme() {
-  themeButton.textContent = `Theme: ${THEME_LABELS[themeChoice()]}`;
+const themeColour = document.querySelector('meta[name="theme-color"]');
+function paintChrome() {
   // The browser's own chrome (address bar on a phone) follows the page.
   themeColour?.setAttribute('content', isDark() ? '#131516' : '#f6f5f1');
 }
-const themeColour = document.querySelector('meta[name="theme-color"]');
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', labelTheme);
-setTheme(themeChoice());
-labelTheme();
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintChrome);
+setTheme('auto');
+paintChrome();
 
 // --- Search: filters the index on the home page, and is a jump menu everywhere ---
 
@@ -125,7 +117,6 @@ const SHORTCUTS: readonly (readonly [string, string])[] = [
   ['R', 'Reset'],
   ['[ and ]', 'Slower and faster'],
   ['N and P', 'Next and previous demo'],
-  ['T', 'Switch theme'],
   ['H', 'Home'],
   ['?', 'Show this list'],
 ];
@@ -141,9 +132,9 @@ const help = el(
   el('form', { method: 'dialog' }, el('button', { text: 'Close' })),
 );
 document.body.append(help);
-const helpButton = button('Keys', () => help.showModal());
+const helpButton = button('Keyboard shortcuts', () => help.showModal());
 helpButton.classList.add('quiet', 'keys');
-helpButton.setAttribute('aria-label', 'Keyboard shortcuts');
+document.querySelector('.site-footer')?.append(helpButton);
 
 document.addEventListener('keydown', (event) => {
   if (event.ctrlKey || event.metaKey || event.altKey) return;
@@ -159,8 +150,7 @@ document.addEventListener('keydown', (event) => {
     event.preventDefault();
     search.focus();
     search.select();
-  } else if (key === 't') themeButton.click();
-  else if (key === '?') help.showModal();
+  } else if (key === '?') help.showModal();
   else if (key === 'h') window.location.hash = '#/';
   else if (key === 'n' || key === 'p') {
     const index = ALL_DEMOS.findIndex((d) => d.id === hashRoute());
@@ -169,11 +159,7 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
-tools.append(
-  el('div', { class: 'search' }, search, el('kbd', { 'aria-hidden': 'true', text: '/' }), results),
-  themeButton,
-  helpButton,
-);
+tools.append(el('div', { class: 'search' }, search, results));
 
 /** Set while the home page is showing: there the index itself is the result list. */
 let home: Home | undefined;
@@ -250,21 +236,28 @@ async function route() {
   } else {
     search.value = '';
     const section = sectionOf(entry.id);
-    main.append(
-      el(
-        'div',
-        { class: 'crumbs' },
-        el('p', {}, el('a', { href: '#/', text: 'All demos' }), ' / ', section?.title ?? ''),
-        copyLinkButton(),
-      ),
-    );
     const body = el('div');
     main.append(body);
     try {
       const { mount } = await entry.load();
       if (mine !== visit) return; // the user moved on while the code loaded
       cleanup = mount(body, entry);
-      main.append(demoFooter(entry));
+      arrangeDemo(body);
+      // Where this demo sits, and the link to it, come after the demo rather than before it.
+      main.append(
+        el(
+          'div',
+          { class: 'crumbs' },
+          el(
+            'p',
+            {},
+            el('a', { href: '#/', text: 'All demos' }),
+            ` / ${section?.title ?? ''} / ${entry.title}`,
+          ),
+          copyLinkButton(),
+        ),
+        demoFooter(entry),
+      );
     } catch (error) {
       if (mine !== visit) return;
       body.append(

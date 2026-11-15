@@ -235,7 +235,7 @@ export const mount: Mount = (root, entry) => {
     });
     status.textContent = step
       ? step.note
-      : `Ready: ${n} segments. Press Play or Step. Drag on the canvas to draw another.`;
+      : `Nothing has run yet: ${n} line segments. Press Play to sweep a line across them and find where they cross, or drag on the picture to draw another.`;
     order.textContent = step
       ? `Status, top to bottom: ${step.status.map((i) => `s${i + 1}`).join('  ') || 'empty'}. Queue: ${step.queue.length} event${step.queue.length === 1 ? '' : 's'}.`
       : 'Status: empty. Queue: every endpoint.';

@@ -90,6 +90,7 @@ export const mount: Mount = (root, entry) => {
   settings.px = clamp(settings.px, 0, 1);
   settings.py = clamp(settings.py, 0, 1);
   let time = clamp(settings.t, 0, 100_000);
+  let probed = false; // whether the sample point has been moved yet
 
   let noise = createNoise(settings.seed);
   const raster = document.createElement('canvas');
@@ -383,10 +384,13 @@ export const mount: Mount = (root, entry) => {
         : kind === 'simplex'
           ? `Gradient · offset at the three corners: ${parts}. Weighted by distance: ${shares} = ${first.toFixed(3)}.`
           : `Random values at the four corners: ${parts}. Blended by the fade curve: ${shares} = ${first.toFixed(3)}.`;
-    status.textContent =
+    const detail =
       settings.oct > 1
         ? `First octave. ${what} With all ${settings.oct} octaves: ${total.toFixed(3)}.`
         : what;
+    status.textContent = probed
+      ? detail
+      : `Nothing has run yet. Each shade is a smooth random value between −1 and 1, and neighbouring points get similar values. The marked point is one sample, and the corners around it decide its value: ${total.toFixed(3)}. Drag the point to move it, or press Play to slide the pattern. ${detail}`;
     return total;
   }
 
@@ -479,6 +483,7 @@ export const mount: Mount = (root, entry) => {
     move: (point) => moveProbe(point.x, point.y),
   });
   function moveProbe(x: number, y: number) {
+    probed = true;
     settings.px = Math.round(clamp(x / stage.width, 0, 1) * 1000) / 1000;
     settings.py = Math.round(clamp(y / stage.height, 0, 1) * 1000) / 1000;
     changed();

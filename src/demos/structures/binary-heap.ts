@@ -3,7 +3,7 @@ import { button, checkbox, el, fieldset } from '../../ui/dom';
 import { urlState } from '../../ui/url';
 import { formula, legend, prose, stats, type Mount } from '../layout';
 import { cellGrid, disc, drawCells, label, line, roleStyle, type Gfx } from './draw';
-import { opForm, opsDemo, presetSelect, record, wholeNumber } from './shared';
+import { actFieldset, opForm, opsDemo, presetSelect, record, wholeNumber } from './shared';
 
 const MAX_VALUE = 99;
 
@@ -160,7 +160,7 @@ export const mount: Mount = (root, entry) => {
   let fills = 0;
 
   demo.layout.panel.append(
-    fieldset(
+    actFieldset(
       'Operations',
       opForm({
         label: `Value (0 to ${MAX_VALUE})`,
@@ -174,12 +174,15 @@ export const mount: Mount = (root, entry) => {
               return value !== null && demo.push(`i${value}`);
             },
           },
+          { name: 'Extract root', run: () => demo.push('x') },
         ],
       }).root,
+    ),
+    fieldset(
+      'More operations',
       el(
         'div',
         { class: 'buttons' },
-        button('Extract root', () => demo.push('x')),
         button('Insert 10 random', () => {
           const random = demo.random();
           demo.push(
@@ -262,5 +265,8 @@ export const mount: Mount = (root, entry) => {
     ),
   );
 
+  // A value worth trying first, so the first press of the button does something.
+  const firstBox = demo.layout.panel.querySelector<HTMLInputElement>('fieldset.act input');
+  if (firstBox) firstBox.value = '45';
   return demo.dispose;
 };

@@ -185,9 +185,11 @@ export const mount: Mount = (root, entry) => {
     status.textContent =
       share === 0
         ? 'No B is left: the field is back in its empty steady state. Paint some B or reseed.'
-        : preset
-          ? preset.note
-          : 'Your own feed and kill rates.';
+        : iterations === 0
+          ? `Nothing has run yet. The round patches are seeds of a second chemical, B, in a field of the first, A (see the key under the picture). Press Play to let the two react and spread.${preset ? ` With this setting: ${preset.note.charAt(0).toLowerCase()}${preset.note.slice(1)}` : ''}`
+          : preset
+            ? preset.note
+            : 'Your own feed and kill rates.';
   }
 
   // --- Controls ---

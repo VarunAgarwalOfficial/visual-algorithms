@@ -16,8 +16,8 @@ const MAX_KEY = 99;
 const MAX_NODES = 31;
 const VARIANTS: readonly { id: TreeVariant; name: string }[] = [
   { id: 'bst', name: 'Plain (no balancing)' },
-  { id: 'avl', name: 'AVL' },
-  { id: 'rb', name: 'Red-black' },
+  { id: 'avl', name: 'AVL (rebalances with rotations)' },
+  { id: 'rb', name: 'Red-black (rebalances using node colours)' },
 ];
 const SHORT: Record<TreeVariant, string> = { bst: 'Plain', avl: 'AVL', rb: 'Red-black' };
 
@@ -47,7 +47,7 @@ export const mount: Mount = (root, entry) => {
 
   const counters = stats({
     size: 'Keys',
-    height: 'Height',
+    height: 'Levels (height)',
     rotations: 'Rotations',
     comparisons: 'Comparisons',
   });
@@ -73,6 +73,21 @@ export const mount: Mount = (root, entry) => {
       return recording;
     },
     draw,
+    intro() {
+      const next = keyBox()?.value;
+      const kind = variant();
+      const what =
+        kind === 'avl' ? 'This AVL tree' : kind === 'rb' ? 'This red-black tree' : 'This tree';
+      const shape =
+        kind === 'avl'
+          ? ' The small number beside each node is its balance: levels on its left minus levels on its right.'
+          : kind === 'rb'
+            ? ' Each node is red or black; those colours are what keep it balanced.'
+            : '';
+      return `Nothing has run yet. ${what} already holds ${keys.length} keys. At every node, smaller keys sit down the left and larger keys down the right.${shape}${
+        next ? ` Press Insert to add ${next} and watch it find its place.` : ''
+      }`;
+    },
     show(frame) {
       counters.set({
         size: frame.size,
@@ -101,7 +116,7 @@ export const mount: Mount = (root, entry) => {
     });
     const fit = fitTree(
       layout,
-      { x: pad, y: top, w: width - 2 * pad, h: height - top - pad },
+      { x: pad, y: top, w: width - 2 * pad, h: height - top - pad - (kind === 'avl' ? 16 : 0) },
       60,
       72,
     );
@@ -125,10 +140,6 @@ export const mount: Mount = (root, entry) => {
         const b = kid && at.get(kid.id);
         if (a && b) line(ctx, a, b, palette.muted);
       }
-    });
-    const leftKids = new Set<number>();
-    visit(frame.root, (node) => {
-      if (node.left) leftKids.add(node.left.id);
     });
     visit(frame.root, (node) => {
       const p = at.get(node.id);
@@ -159,32 +170,57 @@ export const mount: Mount = (root, entry) => {
       if (kind === 'avl' && r >= 9) {
         const b = node.balance;
         const sign = b > 0 ? `+${b}` : b < 0 ? `−${-b}` : '0';
-        // The label sits on the side away from the edge to the parent.
-        const side = leftKids.has(node.id) ? -1 : 1;
+        // The label sits just under the node, between the edges to its children.
         label(
           ctx,
           sign,
-          p.x + side * (r + 2),
-          p.y - r + 1,
+          p.x,
+          p.y + r + Math.max(7, px - 2),
           Math.abs(b) > 1 ? palette.change : palette.muted,
-          Math.max(8, px - 3),
-          side < 0 ? 'right' : 'left',
+          Math.max(9, px - 3),
+          'center',
           Math.abs(b) > 1,
         );
       }
     });
   }
 
+  const keyOps = keyOpsFieldset(demo, { maxKey: MAX_KEY, keys: () => keys, maxKeys: MAX_NODES });
+
+  /** The key box under the picture, which holds the suggested next key. */
+  function keyBox() {
+    return root.querySelector<HTMLInputElement>('fieldset.act input');
+  }
+
+  const key = el('ul', { class: 'legend' });
+  function showKey() {
+    const kind = variant();
+    const items: [string, string][] = [['var(--canvas-compare)', 'Being compared with the key']];
+    if (kind === 'rb') {
+      items.push(
+        ['var(--canvas-change)', 'Red node'],
+        ['var(--canvas-ink)', 'Black node'],
+        ['var(--canvas-accent)', 'Ring: just recoloured or moved'],
+      );
+    } else {
+      items.push(['var(--canvas-change)', kind === 'avl' ? 'Moved by a rotation' : 'Moved']);
+    }
+    items.push(['var(--canvas-good)', 'Found']);
+    key.replaceChildren(...legend(items).children);
+  }
+  showKey();
+
   demo.layout.panel.append(
     fieldset(
       'Tree',
       select<TreeVariant>({
-        label: 'Kind',
+        label: 'Kind of tree',
         options: VARIANTS,
         value: variant(),
         onChange(id) {
           settings.kind = id;
           demo.rebuild();
+          showKey();
         },
       }).root,
       presetSelect(demo, [
@@ -213,22 +249,18 @@ export const mount: Mount = (root, entry) => {
         },
       ]),
     ),
-    keyOpsFieldset(demo, { maxKey: MAX_KEY, keys: () => keys, maxKeys: MAX_NODES }),
+    keyOps,
     demo.player.root,
     demo.history,
   );
 
-  demo.status.append(compare);
   demo.layout.readout.append(
     counters.root,
     demo.status,
-    legend([
-      ['var(--canvas-compare)', 'Compared or about to change'],
-      ['var(--canvas-change)', 'Moved, or a red node'],
-      ['var(--canvas-good)', 'Found'],
-      ['var(--canvas-accent)', 'Just changed (red-black)'],
-    ]),
+    key,
+    el('details', {}, el('summary', { text: 'Compare the three kinds of tree' }), compare),
   );
+  demo.refresh();
 
   demo.layout.about.append(
     prose(

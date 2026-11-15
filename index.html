@@ -28,15 +28,6 @@
       type="font/woff2"
       crossorigin
     />
-    <script>
-      // Before first paint, so a stored theme does not flash the other one.
-      try {
-        const theme = localStorage.getItem('theme');
-        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
-      } catch {
-        // Storage is blocked: the system theme applies.
-      }
-    </script>
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>

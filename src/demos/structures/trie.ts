@@ -4,7 +4,7 @@ import { button, checkbox, el, fieldset } from '../../ui/dom';
 import { urlState } from '../../ui/url';
 import { formula, legend, prose, stats, type Mount } from '../layout';
 import { fitTree, label, line, plate, roleStyle, type Gfx, type Point } from './draw';
-import { opForm, opsDemo, presetSelect, record, refuse } from './shared';
+import { actFieldset, opForm, opsDemo, presetSelect, record, refuse } from './shared';
 
 const MAX_LENGTH = 8;
 const MAX_NODES = 64;
@@ -149,7 +149,7 @@ export const mount: Mount = (root, entry) => {
   };
 
   demo.layout.panel.append(
-    fieldset(
+    actFieldset(
       'Operations',
       opForm({
         label: `Word or prefix (a to z, up to ${MAX_LENGTH} letters)`,
@@ -160,6 +160,9 @@ export const mount: Mount = (root, entry) => {
           { name: 'Complete prefix', run: act('p') },
         ],
       }).root,
+    ),
+    fieldset(
+      'More operations',
       el(
         'div',
         { class: 'buttons' },
@@ -232,5 +235,8 @@ export const mount: Mount = (root, entry) => {
     ),
   );
 
+  // A value worth trying first, so the first press of the button does something.
+  const firstBox = demo.layout.panel.querySelector<HTMLInputElement>('fieldset.act input');
+  if (firstBox) firstBox.value = 'tent';
   return demo.dispose;
 };

@@ -16,7 +16,7 @@ const ADAPTIVE_LEVELS = 3;
 const SHADE_PIXEL = 4;
 
 export const mount: Mount = (root, entry) => {
-  const { canvas, panel, about } = buildLayout(
+  const { canvas, readout, panel, about } = buildLayout(
     root,
     entry,
     'Animation of soft blobs drifting and merging, outlined on a square grid.',
@@ -36,6 +36,14 @@ export const mount: Mount = (root, entry) => {
   settings.cell = Math.max(4, Math.min(80, Math.round(settings.cell)));
   settings.balls = Math.max(1, Math.min(12, Math.round(settings.balls)));
   let balls: Ball[] = [];
+  let moved = false;
+  const status = el('p', { class: 'note' });
+  readout.append(status);
+  const showStatus = () => {
+    status.textContent = moved
+      ? `The ${balls.length} balls are drifting. Where two come close their outlines join into one blob, and they part again as they separate. Pause to look at one moment.`
+      : `Nothing has run yet. Each of the ${balls.length} balls has a soft pull that fades with distance, and the outline marks where the pulls add up to exactly 1. The dots are grid corners that fall inside. Press Play to set the balls drifting.`;
+  };
 
   const shade = document.createElement('canvas');
   const shadeCtx = shade.getContext('2d');
@@ -61,8 +69,10 @@ export const mount: Mount = (root, entry) => {
 
   function reset() {
     balls = createBalls(settings.balls, stage.width, stage.height, seeded(settings.seed));
+    moved = false;
     player?.clearHistory();
     draw();
+    showStatus();
   }
 
   // --- Rendering ---
@@ -207,8 +217,14 @@ export const mount: Mount = (root, entry) => {
     });
 
   const player = simPlayer<Ball[]>({
-    step: (dt) => stepBalls(balls, dt, stage.width, stage.height),
-    draw,
+    step: (dt) => {
+      moved = true;
+      stepBalls(balls, dt, stage.width, stage.height);
+    },
+    draw: () => {
+      draw();
+      showStatus();
+    },
     snapshot: () => balls.map((b) => ({ ...b })),
     restore: (saved) => (balls = saved),
     reset,

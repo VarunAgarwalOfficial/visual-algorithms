@@ -1,7 +1,6 @@
 import { ALL_DEMOS, SECTIONS, searchDemos } from './demos/registry';
 import type { DemoEntry } from './demos/layout';
-import { button, el } from './ui/dom';
-import { prefersReducedMotion } from './ui/theme';
+import { el } from './ui/dom';
 
 export const SITE_TITLE = 'Visual algorithms';
 
@@ -64,22 +63,6 @@ export function mountHome(root: HTMLElement, query: string): Home {
     return { section, node, cards };
   });
 
-  const jump = el(
-    'ul',
-    { class: 'jump', 'aria-label': 'Sections' },
-    ...sections.map(({ section, node }) => {
-      const link = button('', () =>
-        node.scrollIntoView({
-          behavior: prefersReducedMotion() ? 'auto' : 'smooth',
-          block: 'start',
-        }),
-      );
-      link.append(section.title, el('span', { text: String(section.demos.length) }));
-      link.setAttribute('aria-label', `${section.title}, ${section.demos.length} demos`);
-      return el('li', {}, link);
-    }),
-  );
-
   const filter = (text: string) => {
     const wanted = text.trim();
     const found = new Set(searchDemos(wanted));
@@ -91,7 +74,6 @@ export function mountHome(root: HTMLElement, query: string): Home {
       }
       node.hidden = shown === 0;
     }
-    jump.hidden = wanted !== '';
     empty.hidden = found.size > 0;
     count.textContent = wanted
       ? `${found.size} of ${ALL_DEMOS.length} demos match "${wanted}".`
@@ -109,9 +91,8 @@ export function mountHome(root: HTMLElement, query: string): Home {
       el('h1', { text: 'Algorithms you can watch' }),
       el('p', {
         class: 'lede',
-        text: `${ALL_DEMOS.length} small demos, each showing one algorithm at work. Play it, pause it, step forwards and back, and change the input by drawing, dragging or typing. Everything runs in this page; nothing is sent anywhere.`,
+        text: `${ALL_DEMOS.length} small demos, each showing one algorithm working on an example, one step at a time. Choose a picture below to open that demo; the first one, Sorting, is a good place to start. Each opens with its example ready and a Play button under it.`,
       }),
-      jump,
       count,
     ),
     empty,

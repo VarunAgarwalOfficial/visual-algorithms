@@ -148,7 +148,9 @@ export const mount: Mount = (root, entry) => {
       neighbours: step?.neighbours ?? 0,
       best: step?.best ? bestDistance().toFixed(0) : '–',
     });
-    status.textContent = step ? step.note : `Ready: ${n} points. Press Play or Step.`;
+    status.textContent = step
+      ? step.note
+      : `Nothing has run yet: ${n} points. Press Play to find the two that are closest together, or Step forward to go one step at a time.`;
   }
   function bestDistance(): number {
     const [i, j] = step?.best ?? [0, 0];

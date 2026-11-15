@@ -8,8 +8,13 @@ export interface DemoEntry {
   /** Used in the URL: "#/id". */
   id: string;
   title: string;
-  /** One sentence shown under the title and on the home page. */
+  /** One sentence shown on the home page, and under the title when there is no `lede`. */
   summary: string;
+  /**
+   * The sentence under the title on the demo's own page: what the picture shows
+   * and what to do first, in words the page has already explained.
+   */
+  lede?: string;
   /** Extra words the search should match: algorithm names, synonyms. */
   keywords?: string;
   load(): Promise<{ mount: Mount }>;
@@ -26,60 +31,94 @@ export interface DemoLayout {
   canvas: HTMLCanvasElement;
   /** The box around the canvas, for demos that add a second canvas or an overlay. */
   stage: HTMLElement;
-  /** Space directly under the canvas for counters and status. Empty by default. */
+  /** Space under the canvas and its controls for what just happened, then counters. Empty by default. */
   readout: HTMLElement;
+  /** The settings form, shown behind a closed "Settings" disclosure under the picture. */
   panel: HTMLElement;
+  /** The explanation, behind a closed "How it works" disclosure at the end. */
   about: HTMLElement;
 }
 
-/** The shared page skeleton: heading, canvas stage, control panel, notes. */
+/**
+ * The shared page skeleton, one column read top to bottom: heading, the sentence
+ * that says what the demo shows and what to do, the picture, its key and its
+ * controls, what just happened, counters, then the settings and the explanation,
+ * both closed. `arrangeDemo` moves the demo's own pieces into that order once
+ * the demo has filled the panel and readout.
+ */
 export function buildLayout(root: HTMLElement, entry: DemoEntry, canvasLabel: string): DemoLayout {
   const canvas = el('canvas', { role: 'img', 'aria-label': canvasLabel });
-  const panel = el('form', { class: 'panel', 'aria-label': 'Controls' });
+  const panel = el('form', { class: 'panel', 'aria-label': 'Settings' });
   panel.addEventListener('submit', (event) => event.preventDefault());
   const stage = el('div', { class: 'stage' }, canvas);
   const readout = el('div', { class: 'readout' });
-  const about = el(
-    'section',
-    { class: 'about', 'aria-label': 'How it works' },
-    el('h2', { text: 'How it works' }),
-  );
+  const about = el('div', { class: 'about-body' });
 
   root.append(
     el('h1', { text: entry.title }),
-    el('p', { class: 'lede', text: entry.summary }),
-    el('div', { class: 'demo' }, el('div', { class: 'view' }, stage, readout), panel, about),
+    el('p', { class: 'lede', text: entry.lede ?? entry.summary }),
+    el(
+      'div',
+      { class: 'demo' },
+      el(
+        'div',
+        { class: 'view' },
+        stage,
+        el('div', { class: 'key' }),
+        el('div', { class: 'controls' }),
+        readout,
+      ),
+      el('details', { class: 'settings' }, el('summary', { text: 'Settings' }), panel),
+      el('details', { class: 'about' }, el('summary', { text: 'How it works' }), about),
+    ),
   );
-  keepPlaybackNearCanvas(panel);
   return { canvas, stage, readout, panel, about };
 }
 
-const NARROW = window.matchMedia('(max-width: 40rem)');
-
 /**
- * On a phone the panel sits under the picture, so Play and Step go first in it
- * rather than below every other setting. The fieldset is moved in the document,
- * not just on screen, so the tab order matches what is seen.
+ * Puts a mounted demo's pieces in the one reading order. The key (legends) goes
+ * straight under the picture; the demo's first action (a fieldset marked `act`)
+ * and the playback buttons go under the key, so the first control on the page
+ * is the first thing to do; the speed slider joins the closed settings; in the
+ * readout, sentences come before counters and disclosures last. Called once,
+ * right after `mount`.
  */
-function keepPlaybackNearCanvas(panel: HTMLElement): void {
-  let home: ChildNode | null = null;
-  const place = () => {
-    if (!panel.isConnected) {
-      NARROW.removeEventListener('change', place);
-      return;
-    }
-    const playback = panel.querySelector(':scope > .playback');
-    if (!playback) return;
-    if (NARROW.matches && panel.firstElementChild !== playback) {
-      home = playback.nextSibling;
-      panel.prepend(playback);
-    } else if (!NARROW.matches && panel.firstElementChild === playback) {
-      panel.insertBefore(playback, home);
-    }
-  };
-  NARROW.addEventListener('change', place);
-  // The demo fills the panel right after this returns.
-  queueMicrotask(place);
+export function arrangeDemo(root: HTMLElement): void {
+  const key = root.querySelector<HTMLElement>('.view > .key');
+  const controls = root.querySelector<HTMLElement>('.view > .controls');
+  const readout = root.querySelector<HTMLElement>('.view > .readout');
+  const panel = root.querySelector<HTMLElement>('.settings > .panel');
+  const settings = root.querySelector<HTMLDetailsElement>('.demo > .settings');
+  if (!key || !controls || !readout || !panel || !settings) return;
+
+  for (const node of root.querySelectorAll<HTMLElement>('.readout .legend, .panel .legend')) {
+    if (!node.closest('.keep')) key.append(node);
+  }
+  key.hidden = key.childElementCount === 0;
+
+  const acts = [...panel.querySelectorAll<HTMLElement>(':scope > fieldset.act')];
+  const playback = panel.querySelector<HTMLElement>(':scope > .playback');
+  controls.append(...acts);
+  if (playback) {
+    controls.append(playback);
+    // Where the demo's own action comes first, Play is an ordinary button beside it.
+    if (acts.length > 0) playback.querySelector('button.primary')?.classList.remove('primary');
+    const speed = playback.querySelector<HTMLElement>('.speed');
+    if (speed) panel.append(el('fieldset', {}, el('legend', { text: 'Playback speed' }), speed));
+  }
+  controls.hidden = controls.childElementCount === 0;
+
+  const children = [...readout.children];
+  const rank = (node: Element) =>
+    node.tagName === 'DETAILS' ? 2 : node.matches('dl.stats, .stats-group') ? 1 : 0;
+  readout.append(...children.sort((a, b) => rank(a) - rank(b)));
+
+  const names = [...panel.querySelectorAll(':scope > fieldset > legend')]
+    .map((legend) => legend.textContent?.trim().toLowerCase() ?? '')
+    .filter(Boolean);
+  const summary = settings.querySelector('summary');
+  if (summary && names.length > 0) summary.textContent = `Settings: ${names.join(', ')}`;
+  settings.hidden = panel.childElementCount === 0;
 }
 
 /** Builds a paragraph from text with `code` spans marked by backticks. */
@@ -99,6 +138,8 @@ export function formula(text: string): HTMLPreElement {
 export interface Stats<K extends string> {
   root: HTMLElement;
   set(values: Partial<Record<K, string | number>>): void;
+  /** Shows or hides one counter, for counts the current run never uses. */
+  show(key: K, visible: boolean): void;
 }
 
 /** A row of labelled live counters for the readout under the canvas. */
@@ -117,6 +158,10 @@ export function stats<K extends string>(labels: Record<K, string>): Stats<K> {
         const cell = cells.get(key);
         if (cell) cell.textContent = String(value);
       }
+    },
+    show(key, visible) {
+      const cell = cells.get(key);
+      if (cell?.parentElement) cell.parentElement.hidden = !visible;
     },
   };
 }

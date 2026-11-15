@@ -255,10 +255,11 @@ export const mount: Mount = (root, entry) => {
         ratio: last.after > 0 ? `${short(Math.round(last.before / last.after))}×` : '–',
         ms: timer.ms.toFixed(2),
       });
-      status.textContent =
-        settings.iter === 0
+      status.textContent = player?.started
+        ? settings.iter === 0
           ? 'No projection: the velocity keeps its divergence, so fluid piles up and thins out and the motion dies.'
-          : `Advect, then project: ${settings.iter} Gauss-Seidel passes over ${short(cols * rows)} cells cut the mean flow out of a cell from ${last.before.toExponential(1)} to ${last.after.toExponential(1)}.`;
+          : `Advect, then project: ${settings.iter} Gauss-Seidel passes over ${short(cols * rows)} cells cut the mean flow out of a cell from ${last.before.toExponential(1)} to ${last.after.toExponential(1)}.`
+        : `Nothing has run yet. The colour is dye floating in still fluid. Press Play, then drag across the picture to stir it and watch the dye carried along.`;
     }
   }
 

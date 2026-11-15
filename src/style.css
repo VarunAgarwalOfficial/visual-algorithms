@@ -124,6 +124,7 @@ body {
   background: var(--bg);
   color: var(--ink);
   font: var(--text-md) / 1.5 var(--font);
+  font-variant-numeric: lining-nums;
   -webkit-text-size-adjust: 100%;
   text-rendering: optimizeLegibility;
 }
@@ -250,8 +251,7 @@ button[aria-disabled='true'],
 button.primary[aria-disabled='true'] {
   color: var(--muted);
   background: transparent;
-  border-color: var(--control-border);
-  border-style: dashed;
+  border-color: var(--border);
   filter: none;
   cursor: default;
 }
@@ -338,32 +338,6 @@ input[type='range'] {
   padding-right: var(--space-6);
 }
 
-/* The "/" key hint inside the search box. */
-.search kbd {
-  position: absolute;
-  top: 50%;
-  right: var(--space-2);
-  translate: 0 -50%;
-  min-width: 1.4rem;
-  padding: 0 var(--space-1);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-small);
-  color: var(--muted);
-  font: var(--text-xs) / 1.5 var(--mono);
-  text-align: center;
-  pointer-events: none;
-}
-
-.search input:focus + kbd,
-.search input:not(:placeholder-shown) + kbd {
-  display: none;
-}
-
-.tools .theme {
-  min-width: 7rem;
-  white-space: nowrap;
-}
-
 .results {
   position: absolute;
   z-index: 10;
@@ -445,6 +419,14 @@ input[type='range'] {
   font-size: var(--text-sm);
 }
 
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
 .site-footer p {
   margin: 0;
 }
@@ -503,37 +485,6 @@ h1 {
   font-size: 1.0625rem;
 }
 
-.jump {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin: 0 0 var(--space-3);
-  padding: 0;
-  list-style: none;
-}
-
-.jump button {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 2rem;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--border);
-  background: transparent;
-  border-radius: 999px;
-  color: var(--muted);
-  font-weight: 400;
-}
-
-.jump button:hover {
-  border-color: var(--ink);
-  color: var(--ink);
-}
-
-.jump span {
-  font: var(--text-xs) var(--mono);
-}
-
 .count {
   margin: 0;
   color: var(--muted);
@@ -565,10 +516,12 @@ h1 {
   font-size: var(--text-sm);
 }
 
+/* One column of rows, picture then words, so the eye only moves down the page. */
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
-  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  max-width: 48rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -576,33 +529,30 @@ h1 {
 
 .card {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: stretch;
   height: 100%;
   overflow: hidden;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   text-decoration: none;
-  transition:
-    border-color var(--fast) var(--ease),
-    translate var(--fast) var(--ease),
-    box-shadow var(--fast) var(--ease);
+  transition: border-color var(--fast) var(--ease);
 }
 
 .card:hover {
   border-color: var(--accent);
-  translate: 0 -2px;
-  box-shadow: 0 6px 18px rgb(0 0 0 / 0.08);
 }
 
 .thumb {
   display: block;
-  width: 100%;
+  flex: none;
+  width: 10rem;
   height: auto;
   aspect-ratio: 4 / 3;
   object-fit: cover;
   background: var(--canvas-bg);
-  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
 }
 
 /* Each card carries a light and a dark thumbnail; only the one in use is loaded. */
@@ -629,7 +579,8 @@ h1 {
 }
 
 .card-text {
-  padding: var(--space-3) var(--space-4) var(--space-4);
+  align-self: center;
+  padding: var(--space-3) var(--space-4);
 }
 
 .card h3 {
@@ -653,27 +604,16 @@ h1 {
   text-align: center;
 }
 
-/* Demo layout: stage and readout, the control panel beside them, notes underneath. */
+/* Demo layout: one column. The picture, its key and controls, what just happened, counters, then closed disclosures. */
 
 .demo {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: 'view' 'panel' 'about';
   gap: var(--space-4);
   align-items: start;
 }
 
-@media (min-width: 60rem) {
-  .demo {
-    grid-template-columns: minmax(0, 1fr) 20rem;
-    grid-template-rows: auto 1fr;
-    grid-template-areas: 'view panel' 'about panel';
-    column-gap: var(--space-5);
-  }
-}
-
 .view {
-  grid-area: view;
   min-width: 0;
 }
 
@@ -689,7 +629,7 @@ h1 {
   display: block;
   width: 100%;
   aspect-ratio: 4 / 3;
-  max-height: min(70vh, 36rem);
+  max-height: min(52vh, 30rem);
   min-height: 15rem;
 }
 
@@ -704,14 +644,98 @@ h1 {
   cursor: pointer;
 }
 
-.panel {
-  grid-area: panel;
+/* The colour key sits straight under the picture it explains. */
+.key {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+/* The first action and the playback buttons, under the key. */
+.controls {
   display: grid;
   gap: var(--space-4);
-  padding: var(--space-4);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  margin-top: var(--space-3);
+}
+
+.controls fieldset {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.controls legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.controls .buttons {
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, max-content));
+}
+
+.controls .field {
+  max-width: 32rem;
+}
+
+/* A box and the buttons that act on it share a row when there is room. */
+.controls fieldset > div:has(> .field + .buttons) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+}
+
+.controls fieldset > div:has(> .field + .buttons) > .field {
+  flex: 1 1 12rem;
+  max-width: 24rem;
+}
+
+.controls fieldset > div:has(> .field + .buttons) > .buttons {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.controls fieldset > div:has(> .field + .buttons) > .buttons > * {
+  min-width: 6.5rem;
+}
+
+.settings,
+.about {
+  max-width: var(--measure);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-3);
+}
+
+.settings > summary,
+.about > summary {
+  min-height: var(--control);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 600;
+  list-style-position: inside;
+}
+
+.settings > summary::marker,
+.about > summary::marker {
+  color: var(--muted);
+}
+
+.settings[open] > .panel {
+  margin-top: var(--space-3);
+}
+
+.panel {
+  display: grid;
+  gap: var(--space-4);
 }
 
 .panel fieldset {
@@ -786,27 +810,13 @@ output {
 
 .buttons {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
   gap: var(--space-2);
 }
 
 .buttons button {
   padding-inline: var(--space-2);
   line-height: 1.2;
-}
-
-/* An odd button out takes the whole row instead of leaving a hole. */
-@media (min-width: 60.01rem) {
-  .buttons > :last-child:nth-child(odd) {
-    grid-column: 1 / -1;
-  }
-}
-
-/* Below the two-column layout the panel is as wide as the page: one row of buttons. */
-@media (max-width: 60rem) {
-  .buttons {
-    grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
-  }
 }
 
 /* The file input stays focusable; its label is the visible button. */
@@ -832,20 +842,30 @@ output {
 }
 
 .readout {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-5);
-  margin-top: var(--space-3);
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
 }
 
 .readout:empty {
   display: none;
 }
 
-.readout .note {
-  flex: 1 1 100%;
+.readout > .note:first-child {
+  color: var(--ink);
+}
+
+.readout > p {
+  max-width: 72ch;
+}
+
+.readout details > summary {
+  min-height: var(--control);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  list-style-position: inside;
 }
 
 .stats {
@@ -906,19 +926,11 @@ output {
   width: 4em;
 }
 
-.about {
-  grid-area: about;
-  max-width: var(--measure);
-  margin-top: var(--space-4);
+.about-body {
+  margin-top: var(--space-3);
   color: var(--muted);
   font-size: 0.9375rem;
   line-height: 1.6;
-}
-
-.about h2 {
-  margin: 0 0 var(--space-2);
-  color: var(--ink);
-  font-size: var(--text-md);
 }
 
 .about p {
@@ -1005,50 +1017,14 @@ output {
     flex: 1 1 8rem;
   }
 
-  .search kbd,
-  .tools .keys {
-    display: none;
-  }
-
-  .tools .theme {
-    min-width: 0;
-  }
-
-  /* The section chips become one row that scrolls sideways. */
-  .jump {
-    flex-wrap: nowrap;
-    margin-inline: calc(-1 * var(--space-3));
-    padding: 2px var(--space-3);
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .jump li {
-    flex: none;
-  }
-
-  .jump button {
-    min-height: 2.5rem;
-  }
-
   .cards {
-    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-2);
   }
 
-  .card {
-    flex-direction: row;
-    align-items: stretch;
-  }
-
   .thumb {
-    flex: none;
     width: 7rem;
-    height: auto;
     min-height: 100%;
     aspect-ratio: auto;
-    border-bottom: 0;
-    border-right: 1px solid var(--border);
   }
 
   .card-text {
@@ -1084,9 +1060,5 @@ output {
     transition: none !important;
     animation: none !important;
     scroll-behavior: auto !important;
-  }
-
-  .card:hover {
-    translate: none;
   }
 }

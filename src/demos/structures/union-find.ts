@@ -14,7 +14,7 @@ import {
   type Gfx,
   type Point,
 } from './draw';
-import { opForm, opsDemo, presetSelect, record, refuse, wholeNumber } from './shared';
+import { actFieldset, opForm, opsDemo, presetSelect, record, refuse, wholeNumber } from './shared';
 
 const MAX_N = 16;
 const RULES: readonly { id: UnionRule; name: string }[] = [
@@ -186,7 +186,7 @@ export const mount: Mount = (root, entry) => {
   });
 
   demo.layout.panel.append(
-    fieldset(
+    actFieldset(
       'Operations',
       opForm({
         label: 'Elements: two for union, one for find',
@@ -209,6 +209,9 @@ export const mount: Mount = (root, entry) => {
           },
         ],
       }).root,
+    ),
+    fieldset(
+      'More operations',
       el(
         'div',
         { class: 'buttons' },
@@ -284,5 +287,8 @@ export const mount: Mount = (root, entry) => {
     ),
   );
 
+  // A value worth trying first, so the first press of the button does something.
+  const firstBox = demo.layout.panel.querySelector<HTMLInputElement>('fieldset.act input');
+  if (firstBox) firstBox.value = '7 8';
   return demo.dispose;
 };

@@ -49,6 +49,11 @@ export interface OpsDemoOptions<F extends StepFrame> {
   draw(frame: F, g: Gfx): void;
   /** Updates counters and notes for the frame on screen. */
   show?(frame: F, last: F): void;
+  /**
+   * What the caption says before the reader has done anything: the example is
+   * already built, so it describes what is there and says nothing has run yet.
+   */
+  intro?(): string;
 }
 
 export interface OpsDemo {
@@ -65,6 +70,8 @@ export interface OpsDemo {
   replace(ops: readonly string[]): void;
   /** Re-runs everything after a setting changed, keeping the view at the end. */
   rebuild(): void;
+  /** Rewrites the caption and counters, for when the intro's words depend on a control. */
+  refresh(): void;
   /** A generator that differs for every button press but is fixed by the URL. */
   random(): Random;
   redraw(): void;
@@ -88,6 +95,8 @@ export function opsDemo<F extends StepFrame>(o: OpsDemoOptions<F>): OpsDemo {
   let ops: string[] = parse(settings.ops);
   let recording: Recording<F> = { frames: [], starts: [] };
   let current = 0;
+  /** True until the reader acts: the caption then introduces the example instead of replaying its last step. */
+  let untouched = true;
 
   function parse(text: string): string[] {
     const out: string[] = [];
@@ -168,6 +177,7 @@ export function opsDemo<F extends StepFrame>(o: OpsDemoOptions<F>): OpsDemo {
       o.save();
     },
     render(position) {
+      if (position < recording.frames.length - 1) untouched = false;
       const next = Math.min(position, recording.frames.length - 1);
       const changed = next !== current;
       current = next;
@@ -191,13 +201,21 @@ export function opsDemo<F extends StepFrame>(o: OpsDemoOptions<F>): OpsDemo {
     const { starts } = recording;
     let index = -1;
     while (index + 1 < starts.length && starts[index + 1] <= current) index++;
-    which.textContent =
-      ops.length === 0
-        ? 'No operations yet.'
-        : index < 0
-          ? `Start, before the first of ${ops.length} operations.`
-          : `Operation ${index + 1} of ${ops.length}: ${o.describe(ops[index])}.`;
+    if (untouched && ops.length > 0) {
+      caption.textContent =
+        o.intro?.() ??
+        'Nothing has run yet. The picture shows a ready-made example, built by the operations listed below. Use the box under the picture to make the next change and watch it happen step by step.';
+      which.textContent = `The example was built by: ${ops.map(o.describe).join(', ')}.`;
+    } else
+      which.textContent =
+        ops.length === 0
+          ? 'No operations yet.'
+          : index < 0
+            ? `Start, before the first of ${ops.length} operations.`
+            : `Operation ${index + 1} of ${ops.length}: ${o.describe(ops[index])}.`;
     o.show?.(frame, recording.frames[recording.frames.length - 1]);
+    // Until the reader acts there is nothing of theirs to replay, so the playback buttons wait.
+    player.root.style.display = untouched && ops.length > 0 ? 'none' : '';
   }
 
   /** Re-records everything. `at` is the frame to show: undefined means the last one. */
@@ -217,11 +235,13 @@ export function opsDemo<F extends StepFrame>(o: OpsDemoOptions<F>): OpsDemo {
       { class: 'buttons' },
       button('Undo last', () => {
         if (ops.length === 0) return;
+        untouched = false;
         notice.textContent = '';
         ops = ops.slice(0, -1);
         rerun();
       }),
       button('Clear', () => {
+        untouched = false;
         notice.textContent = '';
         ops = [];
         rerun();
@@ -240,6 +260,7 @@ export function opsDemo<F extends StepFrame>(o: OpsDemoOptions<F>): OpsDemo {
     push(...added) {
       const valid = added.map((op) => o.clean(op)).filter((op): op is string => op !== null);
       if (valid.length === 0) return false;
+      untouched = false;
       const room = maxOps - ops.length;
       if (room <= 0) {
         notice.textContent = `This demo keeps at most ${maxOps} operations. Undo or clear to go on.`;
@@ -263,11 +284,13 @@ export function opsDemo<F extends StepFrame>(o: OpsDemoOptions<F>): OpsDemo {
       return true;
     },
     replace(next) {
+      untouched = false;
       notice.textContent = '';
       ops = parse(next.join('.'));
       rerun();
     },
     rebuild: () => rerun(),
+    refresh: () => update(),
     random: () => seeded((Math.imul(settings.seed + 1, 1_000_003) + ops.length * 7919) >>> 0),
     redraw: draw,
     dispose() {
@@ -295,6 +318,8 @@ export function opForm(options: {
   numeric?: boolean;
   /** Starting text. When given, the text stays in the box after an action. */
   value?: string;
+  /** Called after an action succeeds, e.g. to suggest the next value. */
+  after?(input: HTMLInputElement): void;
   actions: readonly Action[];
 }): { root: HTMLElement; input: HTMLInputElement } {
   const field = textInput({
@@ -307,7 +332,10 @@ export function opForm(options: {
   if (options.numeric) field.input.inputMode = 'numeric';
   const run = (action: Action) => {
     if (!action.run(field.input.value.trim())) field.input.setAttribute('aria-invalid', 'true');
-    else if (options.value === undefined) field.input.value = '';
+    else {
+      if (options.value === undefined) field.input.value = '';
+      options.after?.(field.input);
+    }
   };
   field.input.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter') return;
@@ -324,6 +352,13 @@ export function opForm(options: {
   return { root: el('div', {}, field.root, buttons), input: field.input };
 }
 
+/** A fieldset holding a demo's first action; the layout moves it straight under the picture. */
+export function actFieldset(legend: string, ...children: (Node | string)[]): HTMLFieldSetElement {
+  const field = fieldset(legend, ...children);
+  field.classList.add('act');
+  return field;
+}
+
 /** Parses a whole number in [lo, hi], or null. */
 export function wholeNumber(text: string, lo: number, hi: number): number | null {
   if (!/^\d{1,6}$/.test(text)) return null;
@@ -335,7 +370,7 @@ export function wholeNumber(text: string, lo: number, hi: number): number | null
 export function presetSelect(
   demo: OpsDemo,
   presets: readonly { name: string; ops: string | (() => string) }[],
-  label = 'Preset',
+  label = 'Load an example',
 ): HTMLElement {
   const field = select({
     label,
@@ -380,12 +415,12 @@ export function keyOpCodec(maxKey: number, findWord = 'find') {
   };
 }
 
-/** The "Operations" fieldset for insert / delete / find on a number, with random helpers. */
+/** The "Operations" fieldset for insert / delete / find on a number, and a "More operations" one with random helpers. */
 export function keyOpsFieldset(
   demo: OpsDemo,
   options: KeyOps,
   ...extra: (Node | null)[]
-): HTMLFieldSetElement {
+): DocumentFragment {
   const { maxKey } = options;
   const act = (code: string) => (text: string) => {
     const n = wholeNumber(text, 0, maxKey);
@@ -398,8 +433,23 @@ export function keyOpsFieldset(
     }
     return 1 + Math.floor(random() * maxKey);
   };
+  /** A key worth trying next: one that falls between two keys near the middle, so it travels a long way. */
+  const suggest = (): number => {
+    const keys = [...options.keys()].sort((a, b) => a - b);
+    const taken = new Set(keys);
+    if (keys.length >= 2) {
+      const mid = keys.length >> 1;
+      const between = Math.round((keys[mid - 1] + keys[mid]) / 2);
+      if (!taken.has(between)) return between;
+      for (let i = 1; i < keys.length; i++) {
+        const gap = Math.round((keys[i - 1] + keys[i]) / 2);
+        if (!taken.has(gap)) return gap;
+      }
+    }
+    return fresh(demo.random(), taken);
+  };
   const form = opForm({
-    label: `Key (0 to ${maxKey})`,
+    label: `Key: a whole number from 0 to ${maxKey}`,
     numeric: true,
     maxLength: 4,
     actions: [
@@ -407,10 +457,14 @@ export function keyOpsFieldset(
       { name: 'Delete', run: act('d') },
       { name: options.findName ?? 'Find', run: act('f') },
     ],
+    after(input) {
+      input.value = String(suggest());
+    },
   });
-  return fieldset(
-    'Operations',
-    form.root,
+  form.input.value = String(suggest());
+  const field = fieldset('Operations', form.root);
+  const more = fieldset(
+    'More operations',
     el(
       'div',
       { class: 'buttons' },
@@ -441,4 +495,9 @@ export function keyOpsFieldset(
     ),
     ...extra,
   );
+  // The key box is the first thing to try, so it goes under the picture; the rest waits in settings.
+  field.classList.add('act');
+  const both = document.createDocumentFragment();
+  both.append(field, more);
+  return both;
 }

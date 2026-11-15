@@ -210,7 +210,7 @@ export const mount: Mount = (root, entry) => {
     });
     status.textContent = step
       ? step.note
-      : `Ready: ${editor.points.length} points. Press Play or Step, or drag a point to see the result update.`;
+      : `Nothing has run yet: ${editor.points.length} points. Press Play to join them into triangles one point at a time, or drag a point to move it.`;
   }
 
   const counters = stats({

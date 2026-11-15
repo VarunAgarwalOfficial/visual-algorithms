@@ -101,7 +101,7 @@ function merge(input: readonly number[]): SortTrace {
     const mid = (lo + hi) >>> 1;
     sort(lo, mid);
     sort(mid, hi);
-    r.mark(`Merge positions ${lo + 1}–${mid} with ${mid + 1}–${hi}`, {
+    r.mark(`Merge the sorted halves at positions ${lo + 1}–${mid} and ${mid + 1}–${hi}`, {
       ranges: [
         [lo, mid],
         [mid, hi],
@@ -125,7 +125,9 @@ function quick(input: readonly number[]): SortTrace {
       if (r.compare(hi, lo) < 0) r.swap(hi, lo);
       return;
     }
-    r.mark(`Partition positions ${lo + 1}–${hi + 1}`, { ranges: [[lo, hi + 1]] });
+    r.mark(`Positions ${lo + 1}–${hi + 1}: pick a middle value, move smaller ones to its left`, {
+      ranges: [[lo, hi + 1]],
+    });
     const mid = (lo + hi) >>> 1;
     if (r.compare(mid, lo) < 0) r.swap(mid, lo);
     if (r.compare(hi, lo) < 0) r.swap(hi, lo);

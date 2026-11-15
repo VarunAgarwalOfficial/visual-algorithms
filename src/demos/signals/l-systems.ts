@@ -169,17 +169,20 @@ export const mount: Mount = (root, entry) => {
     url.save();
   }
 
-  /** Expands and walks the string again. `animate` restarts the drawing from nothing. */
-  function rebuild(animate: boolean) {
+  /**
+   * Expands and walks the string again. `animate` restarts the drawing from
+   * nothing, and `play` starts it at once (not on first load: nothing moves until the person acts).
+   */
+  function rebuild(animate: boolean, play = true) {
     expansion = expand(axiom, rules, iterations, MAX_SYMBOLS);
     path = turtle(expansion.text, angle, heading, MAX_SEGMENTS);
     clipped = path.count >= MAX_SEGMENTS;
     layout();
     growth.textContent = `Symbols per generation: ${expansion.lengths.map((n) => n.toLocaleString('en-GB')).join(', ')}.`;
     save();
-    if (animate && !prefersReducedMotion() && path.count > 0) {
+    if (animate && path.count > 0 && (!play || !prefersReducedMotion())) {
       player.setLength(path.count, 0);
-      player.play();
+      if (play) player.play();
     } else {
       player.setLength(path.count, path.count);
     }
@@ -289,7 +292,7 @@ export const mount: Mount = (root, entry) => {
       path.count === 0
         ? 'The string has no drawing symbols.'
         : position === 0
-          ? 'Ready. The turtle is at the start.'
+          ? 'Nothing has run yet. The faint line is the whole drawing; press Play to watch the pen trace it.'
           : position >= path.count
             ? 'The turtle has read the whole string.'
             : `The turtle is drawing step ${position} of ${path.count}.`;
@@ -459,7 +462,7 @@ export const mount: Mount = (root, entry) => {
     ),
   );
 
-  rebuild(true);
+  rebuild(true, false);
 
   return () => {
     player.dispose();

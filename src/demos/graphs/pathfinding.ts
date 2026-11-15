@@ -21,6 +21,7 @@ import { tracePlayer } from '../../ui/player';
 import { onDrag } from '../../ui/pointer';
 import { mix, watchPalette } from '../../ui/theme';
 import { phoneDefault, urlState } from '../../ui/url';
+import { FONT } from '../../ui/font';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 
 type Preset = 'random' | 'maze' | 'empty';
@@ -35,17 +36,18 @@ const BRUSHES: readonly { id: Brush; name: string }[] = [
   { id: 'mud', name: `Mud (${MUD_COST}× the cost of a step)` },
 ];
 const HEURISTICS: readonly { id: Heuristic; name: string }[] = [
-  { id: 'manhattan', name: 'Manhattan' },
-  { id: 'octile', name: 'Octile' },
+  { id: 'manhattan', name: 'Manhattan: steps across plus steps down' },
+  { id: 'octile', name: 'Octile: allows for diagonal steps' },
 ];
+/** Names for the comparison table and the menu, with no abbreviations. */
 const SHORT: Record<GridAlgorithm, string> = {
-  astar: 'A*',
+  astar: 'A* (A star)',
   dijkstra: 'Dijkstra',
-  bfs: 'BFS',
-  dfs: 'DFS',
-  greedy: 'Greedy',
-  bidirectional: 'Bidirectional',
-  jps: 'JPS',
+  bfs: 'Breadth-first',
+  dfs: 'Depth-first',
+  greedy: 'Greedy best-first',
+  bidirectional: 'Bidirectional breadth-first',
+  jps: 'Jump point search',
 };
 
 const MIN_COLS = 11;
@@ -190,9 +192,43 @@ export const mount: Mount = (root, entry) => {
     result = searchGrid(info().id, grid, start, goal, options());
     resetState();
     caption.textContent = info().summary;
+    showKey();
     compare();
     player.setLength(result.steps.length, keepEnd ? result.steps.length : 0);
     url.save();
+  }
+
+  /** The key lists only the kinds of cell this grid and search can show. */
+  function showKey() {
+    const items: [string, string][] = [
+      ['var(--canvas-accent)', 'S: start'],
+      ['var(--canvas-change)', 'G: goal'],
+      ['color-mix(in srgb, var(--canvas-ink) 70%, var(--canvas-bg))', 'Wall'],
+    ];
+    if (grid.cells.includes(MUD)) {
+      items.push([
+        'repeating-linear-gradient(135deg, var(--canvas-muted) 0 1.5px, var(--canvas-faint) 1.5px 4px)',
+        `Mud, hatched (costs ${MUD_COST} steps to cross)`,
+      ]);
+    }
+    items.push(
+      ['var(--canvas-compare)', 'Reached, waiting to be visited'],
+      ['var(--canvas-visit)', 'Visited'],
+    );
+    if (settings.alg === 'bidirectional') {
+      items.push([
+        'color-mix(in srgb, var(--canvas-visit) 55%, var(--canvas-accent))',
+        'Visited by the search from the goal',
+      ]);
+    }
+    if (settings.alg === 'jps') {
+      items.push([
+        'color-mix(in srgb, var(--canvas-visit) 40%, var(--canvas-bg))',
+        'Looked at while sliding past',
+      ]);
+    }
+    items.push(['var(--canvas-good)', 'Route found (at the end)']);
+    key.replaceChildren(...legend(items).children);
   }
 
   /** Runs every algorithm on the current grid so their costs can be read side by side. */
@@ -325,9 +361,9 @@ export const mount: Mount = (root, entry) => {
       ctx.strokeRect(px(node % cols) + 1, py(Math.floor(node / cols)) + 1, cell - 2, cell - 2);
     }
 
-    const marker = (i: number, colour: string, ring: boolean) => {
+    const marker = (i: number, colour: string, letter: string) => {
       const [x, y] = centre(i);
-      const r = Math.max(3, cell * 0.42);
+      const r = Math.max(5, cell * 0.48);
       ctx.beginPath();
       ctx.arc(x, y, r, 0, 2 * Math.PI);
       ctx.fillStyle = colour;
@@ -335,15 +371,16 @@ export const mount: Mount = (root, entry) => {
       ctx.lineWidth = 1.5;
       ctx.strokeStyle = palette.bg;
       ctx.stroke();
-      if (ring) {
-        ctx.beginPath();
-        ctx.arc(x, y, r * 0.42, 0, 2 * Math.PI);
-        ctx.fillStyle = palette.bg;
-        ctx.fill();
-      }
+      ctx.fillStyle = palette.bg;
+      ctx.font = `600 ${Math.max(8, Math.round(r * 1.2))}px ${FONT}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(letter, x, y + 0.5);
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
     };
-    marker(start, palette.accent, false);
-    marker(goal, palette.change, true);
+    marker(start, palette.accent, 'S');
+    marker(goal, palette.change, 'G');
   }
 
   function update() {
@@ -357,26 +394,26 @@ export const mount: Mount = (root, entry) => {
       steps: done && found ? result.path.length - 1 : '–',
       cost: done && found ? format(result.cost) : '–',
     });
-    const at = (i: number) => `(${(i % grid.cols) + 1}, ${Math.floor(i / grid.cols) + 1})`;
+    const at = (i: number) => `column ${(i % grid.cols) + 1}, row ${Math.floor(i / grid.cols) + 1}`;
     if (!done) {
       if (cursor === 0)
-        status.textContent = 'Ready. The start cell is the only one on the frontier.';
+        status.textContent = `Nothing has run yet. ${info().name === 'A*' ? 'A* (A star)' : info().name} will look for a route from S to G around the walls (the solid grey squares). Press Play to watch it, or Step forward to go one cell at a time.`;
       else {
         const step = result.steps[cursor - 1];
         const fresh = step.opened.length;
         status.textContent =
-          `Expand ${at(step.node)}${step.side ? ' from the goal side' : ''}: ` +
+          `Visit the outlined cell at ${at(step.node)}${step.side ? ', searching from the goal' : ''}: ` +
           (fresh === 0
-            ? 'nothing new around it.'
-            : `${fresh} new cell${fresh === 1 ? '' : 's'} on the frontier.`);
+            ? 'no new neighbours to add.'
+            : `${fresh} neighbour${fresh === 1 ? '' : 's'} reached for the first time, now waiting to be visited.`);
       }
       return;
     }
     if (!found) {
-      status.textContent = `No path: the goal cannot be reached. ${total} cells expanded.`;
+      status.textContent = `No route: walls cut G off from S. ${total} cells visited.`;
       return;
     }
-    let text = `Path found: ${result.path.length - 1} steps, cost ${format(result.cost)}, after expanding ${total} cells.`;
+    let text = `Route found: ${result.path.length - 1} steps from S to G, costing ${format(result.cost)}, after visiting ${total} cells.`;
     if (info().unweighted && grid.cells.includes(MUD)) {
       text +=
         ' This search ignores mud when choosing where to go, so a cheaper path may exist. The cost shown still counts the mud on its path.';
@@ -450,10 +487,10 @@ export const mount: Mount = (root, entry) => {
   // --- Controls ---
 
   const counters = stats({
-    expanded: 'Cells expanded',
-    frontier: 'Frontier',
-    steps: 'Path steps',
-    cost: 'Path cost',
+    expanded: 'Cells visited',
+    frontier: 'Cells waiting',
+    steps: 'Route steps',
+    cost: 'Route cost',
   });
   const table = stats(
     Object.fromEntries(GRID_ALGORITHMS.map((a) => [a.id, SHORT[a.id]])) as Record<
@@ -463,6 +500,7 @@ export const mount: Mount = (root, entry) => {
   );
   const status = el('p', { class: 'note', style: 'flex: 1 1 100%; min-height: 2.8em' });
   const caption = el('p', { class: 'note' });
+  const key = el('ul', { class: 'legend' });
 
   const presetSelect = select<Preset>({
     label: 'Preset',
@@ -475,7 +513,7 @@ export const mount: Mount = (root, entry) => {
   });
   const algorithmSelect = select<GridAlgorithm>({
     label: 'Algorithm',
-    options: GRID_ALGORITHMS,
+    options: GRID_ALGORITHMS.map((a) => ({ id: a.id, name: SHORT[a.id] })),
     value: info().id,
     onChange(id) {
       settings.alg = id;
@@ -484,7 +522,7 @@ export const mount: Mount = (root, entry) => {
     },
   });
   const heuristicSelect = select<Heuristic>({
-    label: 'Heuristic (A*, greedy)',
+    label: 'Distance guess (used by A* and greedy)',
     options: HEURISTICS,
     value: heuristic(),
     onChange(id) {
@@ -528,7 +566,7 @@ export const mount: Mount = (root, entry) => {
       }).root,
       presetSelect.root,
       slider({
-        label: 'Columns',
+        label: 'Grid width (cells)',
         min: MIN_COLS,
         max: MAX_COLS,
         step: 2,
@@ -562,28 +600,17 @@ export const mount: Mount = (root, entry) => {
   readout.append(
     counters.root,
     status,
-    legend([
-      ['var(--canvas-accent)', 'Start'],
-      ['var(--canvas-change)', 'Goal'],
-      ['var(--canvas-compare)', 'Frontier'],
-      ['var(--canvas-visit)', 'Expanded'],
-      [
-        'color-mix(in srgb, var(--canvas-visit) 55%, var(--canvas-accent))',
-        'Expanded from the goal (bidirectional)',
-      ],
-      [
-        'color-mix(in srgb, var(--canvas-visit) 40%, var(--canvas-bg))',
-        'Looked at while sliding (jump point search)',
-      ],
-      ['var(--canvas-good)', 'Path'],
-      ['color-mix(in srgb, var(--canvas-ink) 70%, var(--canvas-bg))', 'Wall'],
-      ['var(--canvas-muted)', 'Mud (hatched)'],
-    ]),
-    el('p', {
-      class: 'note',
-      text: `Every algorithm on this grid: cells expanded · path cost. The cost always counts mud at ${MUD_COST} times a normal step. Only A* and Dijkstra take it into account while searching; BFS, DFS, greedy, bidirectional and JPS ignore it.`,
-    }),
-    table.root,
+    key,
+    el(
+      'details',
+      {},
+      el('summary', { text: 'Compare every algorithm on this grid' }),
+      el('p', {
+        class: 'note',
+        text: `Each entry is the number of cells visited, then the cost of the route found. Mud counts as ${MUD_COST} steps. Only A* and Dijkstra avoid mud while searching; the others treat it as floor.`,
+      }),
+      table.root,
+    ),
   );
 
   about.append(

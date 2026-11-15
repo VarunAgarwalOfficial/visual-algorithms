@@ -176,7 +176,8 @@ export const mount: Mount = (root, entry) => {
   }
 
   function describe(step: MazeStep | undefined): string {
-    if (!step) return 'Ready: every cell is walled in.';
+    if (!step)
+      return 'Nothing has run yet: every cell is walled in. Press Play to watch a maze being carved, one wall at a time.';
     const id = algorithm().id;
     if (step.t === 'seed') {
       return id === 'wilson'

@@ -365,8 +365,8 @@ export const mount: Mount = (root, entry) => {
   );
 
   makeFirstRow();
-  retrace(prefersReducedMotion() ? Number.MAX_SAFE_INTEGER : 0);
-  if (!prefersReducedMotion()) player.play();
+  // Only the first row exists until the person presses Play or Step.
+  retrace(0);
 
   return () => {
     stopDrag();

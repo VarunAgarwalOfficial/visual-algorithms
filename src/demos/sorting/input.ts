@@ -83,7 +83,7 @@ export function inputControls(settings: InputSettings, onChange: () => void): In
     },
   });
   const sizeSlider = slider({
-    label: 'Size',
+    label: 'Number of bars',
     min: MIN_SIZE,
     max: MAX_SIZE,
     value: settings.n,

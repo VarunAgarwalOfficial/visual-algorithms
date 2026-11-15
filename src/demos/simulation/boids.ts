@@ -259,11 +259,13 @@ export const mount: Mount = (root, entry) => {
         ms: timer.ms.toFixed(2),
       });
       const seenCount = neighbours.reduce((sum, v) => sum + v, 0);
-      status.textContent = settings.brute
-        ? `Brute force: every boid measures its distance to all ${flock.n - 1} others.`
-        : `Grid of ${grid.cols} × ${grid.rows} cells: each boid only measures the boids filed in the cells its radius touches.${
-            focusOn ? ` The highlighted boid sees ${seenCount}.` : ''
-          }`;
+      status.textContent = player?.started
+        ? settings.brute
+          ? `Brute force: every boid measures its distance to all ${flock.n - 1} others.`
+          : `Grid of ${grid.cols} × ${grid.rows} cells: each boid only measures the boids filed in the cells its radius touches.${
+              focusOn ? ` The highlighted boid sees ${seenCount}.` : ''
+            }`
+        : `Nothing has run yet. Each of the ${flock.n} arrows is a simulated bird (a boid) pointing the way it is heading. Each one only looks at boids within its radius: it keeps apart from very close ones, turns to match their heading, and drifts toward their middle. Press Play to set the flock moving.`;
     }
   }
 

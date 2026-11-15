@@ -38,6 +38,67 @@ export function splitRect(rect: Rect, buckets: boolean): { plot: Rect; strip?: R
   };
 }
 
+/** Room kept under the bars for their values, and above them for the word naming the step. */
+export const VALUE_ROOM = 15;
+export const WORD_ROOM = 15;
+
+/** Whether bars are wide enough to carry their values. */
+export const labelsFit = (width: number, n: number) => width / Math.max(1, n) >= 13;
+
+/**
+ * Writes each bar's value under it, and over each highlighted bar the word for
+ * what the step did to it, so the picture says what the colours mean.
+ */
+function labelBars(
+  ctx: CanvasRenderingContext2D,
+  palette: Palette,
+  plot: Rect,
+  array: readonly number[],
+  scaleMax: number,
+  highlight: (i: number) => string | undefined,
+  step: string | undefined,
+): void {
+  const n = array.length;
+  if (!labelsFit(plot.w, n)) return;
+  const { slot, unit, bottom } = columns(plot, n, scaleMax);
+  const size = Math.min(12, Math.max(9, Math.floor(slot * 0.55)));
+  ctx.font = `${size}px ${FAMILY}`;
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = palette.muted;
+  for (let i = 0; i < n; i++) ctx.fillText(String(array[i]), plot.x + (i + 0.5) * slot, bottom + 3);
+  if (!step) return;
+  const word = { compare: 'compare', swap: 'swap', write: 'write', read: 'read' }[step] ?? step;
+  ctx.font = SMALL_FONT;
+  ctx.textBaseline = 'alphabetic';
+  for (let i = 0; i < n; i++) {
+    const colour = highlight(i);
+    if (!colour) continue;
+    const x = Math.max(plot.x + 22, Math.min(plot.x + plot.w - 22, plot.x + (i + 0.5) * slot));
+    ctx.fillStyle = palette.ink;
+    ctx.fillText(word, x, bottom - Math.max(1, array[i] * unit) - 4);
+  }
+  ctx.textAlign = 'left';
+}
+
+/**
+ * The plot and tally strip for a playback, leaving room above and below the
+ * bars for their labels when the bars are wide enough to carry them.
+ */
+export function layoutSort(
+  rect: Rect,
+  playback: Playback,
+  mode: ViewMode,
+): { plot: Rect; strip?: Rect } {
+  const split = splitRect(rect, usesBuckets(playback));
+  if (mode !== 'bars' || !labelsFit(split.plot.w, playback.array.length)) return split;
+  const { plot } = split;
+  return {
+    ...split,
+    plot: { ...plot, y: plot.y + WORD_ROOM, h: Math.max(10, plot.h - WORD_ROOM - VALUE_ROOM) },
+  };
+}
+
 /** Where bar or dot `i` sits: used for drawing and for dragging bar heights. */
 export function columns(plot: Rect, n: number, scaleMax: number) {
   const slot = plot.w / Math.max(1, n);
@@ -74,7 +135,7 @@ export function drawSort(
   const n = array.length;
   if (n === 0) return;
   const last = done ? undefined : playback.last;
-  const { plot, strip } = splitRect(rect, usesBuckets(playback));
+  const { plot, strip } = layoutSort(rect, playback, mode);
 
   // Which range, if any, each position belongs to.
   const group = new Int8Array(n).fill(-1);
@@ -113,6 +174,7 @@ export function drawSort(
         ctx.fillStyle = highlight(i) ?? base(i);
         ctx.fillRect(plot.x + i * slot, bottom - height, Math.max(1, slot - gap), height);
       }
+      labelBars(ctx, palette, plot, array, scaleMax, highlight, last?.type);
     } else {
       const radius = Math.max(1.2, Math.min(3.5, slot * 0.4));
       for (let i = 0; i < n; i++) {

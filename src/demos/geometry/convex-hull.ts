@@ -163,7 +163,7 @@ export const mount: Mount = (root, entry) => {
     const cross = step?.turn ? ` Cross product = ${step.turn.cross}.` : '';
     status.textContent = step
       ? step.note + cross
-      : `Ready: ${editor.points.length} points. Press Play or Step.`;
+      : `Nothing has run yet: ${editor.points.length} points. Press Play to wrap the outermost points in a boundary, or Step forward to go one step at a time.`;
     // The stack (or the polygon so far), bottom first; a long one shows its top end.
     const chain = step?.chain ?? [];
     const names = chain.slice(-14).map((i) => `p${i + 1}`);

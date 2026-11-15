@@ -256,9 +256,11 @@ export const mount: Mount = (root, entry) => {
         momentum: `${Math.round(p.x)}, ${Math.round(p.y)}`,
         ms: timer.ms.toFixed(3),
       });
-      status.textContent = settings.brute
-        ? `Brute force: all ${short(brute)} pairs go to the overlap test, and ${counts.contacts} of them touch.`
-        : `Grid of ${grid.cols} × ${grid.rows} cells: only discs in the same or adjacent cells are tested, ${short(counts.candidates)} pairs, and ${counts.contacts} of them touch.`;
+      status.textContent = player?.started
+        ? settings.brute
+          ? `Brute force: all ${short(brute)} pairs go to the overlap test, and ${counts.contacts} of them touch.`
+          : `Grid of ${grid.cols} × ${grid.rows} cells: only discs in the same or adjacent cells are tested, ${short(counts.candidates)} pairs, and ${counts.contacts} of them touch.`
+        : `Nothing has run yet. The discs are still. Once they move, each pair that touches bounces apart, and the page only tests pairs that are near each other. Press Play to set them moving.`;
     }
   }
 

@@ -8,33 +8,34 @@ import { watchPalette } from '../../ui/theme';
 import { urlState } from '../../ui/url';
 import { buildLayout, formula, legend, prose, stats, type Mount } from '../layout';
 import { createTone } from './audio';
+import { INPUT_KINDS } from '../../core/sorting/inputs';
 import { INPUT_DEFAULTS, inputControls } from './input';
 import {
   columns,
   drawSort,
   FONT,
-  splitRect,
+  layoutSort,
   usesBuckets,
   VIEW_MODES,
   type Rect,
   type ViewMode,
 } from './render';
 
-/** Says what a step did, given the array after it. */
+/** Says what a step did, given the array after it, in the words drawn over the bars. */
 function describe(step: Step, playback: Playback): string {
   const { array, buckets, bucketBase } = playback;
   const at = (i: number) => `position ${i + 1}`;
   switch (step.type) {
     case 'compare':
-      return `Compare ${array[step.i]} at ${at(step.i)} with ${array[step.j]} at ${at(step.j)}.`;
+      return `Compare ${array[step.i]} with ${array[step.j]} (the bars marked "compare") to see which should come first.`;
     case 'swap':
-      return `Swap ${array[step.j]} and ${array[step.i]}, at positions ${step.i + 1} and ${step.j + 1}.`;
+      return `Swap: ${array[step.j]} and ${array[step.i]} were in the wrong order, so they change places (positions ${step.i + 1} and ${step.j + 1}).`;
     case 'write':
       return step.bucket === undefined
-        ? `Write ${step.value} to ${at(step.i)}.`
-        : `Write ${step.value} to ${at(step.i)}, from bucket ${step.bucket + bucketBase}.`;
+        ? `Write ${step.value} into ${at(step.i)}.`
+        : `Write ${step.value} into ${at(step.i)}, taking it from bucket ${step.bucket + bucketBase}.`;
     case 'read':
-      return `Read ${array[step.i]} at ${at(step.i)}: bucket ${step.bucket + bucketBase} now holds ${buckets[step.bucket]}.`;
+      return `Read ${array[step.i]} at ${at(step.i)} and count it in bucket ${step.bucket + bucketBase}, which now holds ${buckets[step.bucket]}.`;
   }
 }
 
@@ -45,7 +46,7 @@ export const mount: Mount = (root, entry) => {
     'The array being sorted, drawn as bars, dots or a colour wheel. The values in use are highlighted.',
   );
 
-  const url = urlState({ alg: 'quick', view: 'bars', ...INPUT_DEFAULTS, speed: 60 });
+  const url = urlState({ alg: 'quick', view: 'bars', ...INPUT_DEFAULTS, n: 20, speed: 8 });
   const settings = url.state;
   settings.speed = Math.max(0.5, Math.min(2000, settings.speed));
   const algorithm = () => getAlgorithm(settings.alg);
@@ -89,7 +90,41 @@ export const mount: Mount = (root, entry) => {
       chosen.stable ? 'Stable' : 'Not stable'
     }.`;
     player.setLength(playback.length);
+    showUsed();
     url.save();
+  }
+
+  /** Shows only the counters and key entries this algorithm's run can use. */
+  function showUsed() {
+    const used = new Set(playback.trace.steps.map((step) => step.type));
+    const buckets = usesBuckets(playback);
+    const ranged = playback.trace.marks.some((mark) => mark.ranges?.length);
+    counters.show('comparisons', used.has('compare'));
+    counters.show('swaps', used.has('swap'));
+    counters.show('writes', used.has('write'));
+    counters.show('reads', used.has('read'));
+    const items: [string, string][] = [];
+    if (used.has('compare') || used.has('read')) {
+      items.push([
+        'var(--canvas-compare)',
+        used.has('read') ? 'Being compared or read' : 'Being compared',
+      ]);
+    }
+    if (used.has('swap') || used.has('write')) {
+      items.push([
+        'var(--canvas-change)',
+        used.has('write') ? 'Just moved or written' : 'Just swapped',
+      ]);
+    }
+    if (ranged) {
+      items.push([
+        'color-mix(in srgb, var(--canvas-series-1) 60%, var(--canvas-bg))',
+        'Part of the array being worked on',
+      ]);
+    }
+    if (buckets) items.push(['var(--canvas-accent)', 'Bucket counts']);
+    items.push(['var(--canvas-good)', 'Sorted (at the end)']);
+    key.replaceChildren(...legend(items).children);
   }
 
   // --- Rendering ---
@@ -108,9 +143,11 @@ export const mount: Mount = (root, entry) => {
     drawSort(ctx, palette, rect, playback, view(), scaleMax);
 
     const label = playback.done
-      ? 'Sorted'
+      ? 'Sorted: shortest on the left, tallest on the right'
       : (playback.mark?.label ??
-        (editable() ? 'Drag the bars to change the values' : algorithm().name));
+        (player.position === 0
+          ? `Nothing has run yet${editable() ? ' (you can drag a bar to change its value)' : ''}`
+          : algorithm().name));
     ctx.font = FONT;
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
@@ -123,10 +160,10 @@ export const mount: Mount = (root, entry) => {
     counters.set({ ...playback.counts });
     const last = playback.last;
     status.textContent = playback.done
-      ? `Sorted after ${playback.length} steps.`
+      ? `Sorted after ${playback.length} steps: every bar is now no taller than the one to its right.`
       : last
         ? describe(last, playback)
-        : 'Ready. Press Play, or step through one operation at a time.';
+        : `Nothing has run yet. These ${playback.array.length} bars are in ${orderName()} order, and each bar is as tall as the number under it. Press Play to watch ${algorithm().name.toLowerCase()} put them in order from shortest to tallest, or Step forward to see one step at a time.`;
   }
 
   // --- Editing the input by dragging bars ---
@@ -136,7 +173,7 @@ export const mount: Mount = (root, entry) => {
   let lastIndex = 0;
 
   function dragTo(x: number, y: number) {
-    const { plot } = splitRect(body(), usesBuckets(playback));
+    const { plot } = layoutSort(body(), playback, view());
     const { indexAt, valueAt } = columns(plot, dragged.length, scaleMax);
     const index = indexAt(x);
     const value = valueAt(y);
@@ -156,7 +193,7 @@ export const mount: Mount = (root, entry) => {
     down(point) {
       if (!editable()) return false;
       dragged = [...input.values()];
-      const { plot } = splitRect(body(), usesBuckets(playback));
+      const { plot } = layoutSort(body(), playback, view());
       lastIndex = columns(plot, dragged.length, scaleMax).indexAt(point.x);
       dragTo(point.x, point.y);
       return true;
@@ -177,6 +214,11 @@ export const mount: Mount = (root, entry) => {
     reads: 'Bucket reads',
   });
   const status = el('p', { class: 'note' });
+  const key = el('ul', { class: 'legend' });
+  const orderName = () =>
+    settings.input === 'custom'
+      ? 'your'
+      : (INPUT_KINDS.find((k) => k.id === settings.input)?.name.toLowerCase() ?? 'random');
   const caption = el('p', { class: 'note' });
   const input = inputControls(settings, () => retrace());
 
@@ -216,24 +258,11 @@ export const mount: Mount = (root, entry) => {
     player.root,
   );
 
-  readout.append(
-    counters.root,
-    status,
-    legend([
-      ['var(--canvas-compare)', 'Compared or read'],
-      ['var(--canvas-change)', 'Swapped or written'],
-      [
-        'color-mix(in srgb, var(--canvas-series-1) 60%, var(--canvas-bg))',
-        'Range or run in work (one colour each)',
-      ],
-      ['var(--canvas-good)', 'Sorted'],
-      ['var(--canvas-accent)', 'Bucket tallies'],
-    ]),
-  );
+  readout.append(counters.root, status, key);
 
   about.append(
     prose(
-      'Each algorithm runs once up front and records every comparison, swap, write and bucket read. Playback moves a cursor through that list, so you can pause, step either way, or drag the step slider. At step 0, in the bars view, you can drag bar heights to make your own input, or type a list of values.',
+      'Each algorithm runs once up front and records every comparison, swap, write and bucket read. Playback moves a cursor through that list, so you can pause, step either way, or drag the "Steps done" slider. Before the first step, in the bars view, you can drag bar heights to make your own input, or type a list of values.',
     ),
     prose(
       'A sort that only learns about values by comparing them cannot beat `n log n` in the worst case. There are `n!` possible orderings and each comparison has two outcomes, so `h` comparisons can tell apart at most `2^h` orderings.',
