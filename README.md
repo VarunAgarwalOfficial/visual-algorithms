@@ -226,7 +226,9 @@ some sites want an absolute one, so put the site's full address in the
 
 Grown from a rebuild of three hobby projects written between 2020 and 2022: a sorting
 visualiser (2020), metaballs with marching squares and a Fourier transform
-visualiser (both 2022, Python/Pygame and p5.js). The smiley preset is the test
+visualiser (both 2022, Python/Pygame and p5.js; see
+[Marching-Squares-Metaballs](https://github.com/VarunAgarwalOfficial/Marching-Squares-Metaballs) and
+[Fourier-Transform-Visualizer](https://github.com/VarunAgarwalOfficial/Fourier-Transform-Visualizer)). The smiley preset is the test
 drawing from the original Fourier project.
 
 ## Licence
