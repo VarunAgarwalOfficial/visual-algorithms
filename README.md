@@ -4,6 +4,8 @@ Forty-four interactive demos on one static site: sorting, graphs and
 pathfinding, geometry, signals and maths, data structures, dynamic programming
 and strings, and simulation. TypeScript, canvas, no runtime dependencies.
 
+Live at <https://varunagarwalofficial.github.io/visual-algorithms/>.
+
 ![The home page: demos grouped by section, each with a thumbnail](docs/home.png)
 
 The idea is the one the first three demos had: do not show an algorithm's
@@ -216,11 +218,9 @@ and every focusable element shows a focus ring.
 
 ## Deploying
 
-`.github/workflows/pages.yml` builds and publishes `dist/` to GitHub Pages. It
-runs by hand only, once Pages is enabled with "GitHub Actions" as the source.
-The social preview tag points at `og.png` with a relative address;
-some sites want an absolute one, so put the site's full address in the
-`og:image` tag in `index.html` once it is known.
+`.github/workflows/pages.yml` builds `dist/` and publishes it to
+<https://varunagarwalofficial.github.io/visual-algorithms/> on every push to
+`main`.
 
 ## Credits
 
