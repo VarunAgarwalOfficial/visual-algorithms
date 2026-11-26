@@ -1,10 +1,9 @@
 # Builds the site and publishes it to GitHub Pages.
-# Inactive until Pages is enabled for the repository (Settings > Pages > Source: GitHub Actions).
+# Runs by hand only. Pages is not enabled for the repository yet
+# (Settings > Pages > Source: GitHub Actions); then add back `push: branches: [main]`.
 name: Deploy to GitHub Pages
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:

@@ -156,7 +156,7 @@ each picture above its text.
 Canvases are sized from the device-pixel box, so lines stay sharp on high-DPI
 screens and when the browser zoom changes.
 
-## Run
+## Run it
 
 Needs Node 22.13 or newer (an even-numbered release; the workflow uses 22).
 
@@ -217,8 +217,8 @@ and every focusable element shows a focus ring.
 ## Deploying
 
 `.github/workflows/pages.yml` builds and publishes `dist/` to GitHub Pages. It
-does nothing until Pages is enabled for the repository with "GitHub Actions" as
-the source. The social preview tag points at `og.png` with a relative address;
+runs by hand only, once Pages is enabled with "GitHub Actions" as the source.
+The social preview tag points at `og.png` with a relative address;
 some sites want an absolute one, so put the site's full address in the
 `og:image` tag in `index.html` once it is known.
 
@@ -230,6 +230,10 @@ visualiser (both 2022, Python/Pygame and p5.js; see
 [Marching-Squares-Metaballs](https://github.com/VarunAgarwalOfficial/Marching-Squares-Metaballs) and
 [Fourier-Transform-Visualizer](https://github.com/VarunAgarwalOfficial/Fourier-Transform-Visualizer)). The smiley preset is the test
 drawing from the original Fourier project.
+
+## Status
+
+Working, as of 26 November 2026. See [STATUS.md](STATUS.md).
 
 ## Licence
 
