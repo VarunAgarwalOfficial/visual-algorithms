@@ -1,10 +1,12 @@
+<p align="center"><img src="docs/banner.png" alt="Pixel art: sunflowers of rising height, two swapping places" width="100%"></p>
+
 # Visual algorithms
 
-Forty-four interactive demos on one static site: sorting, graphs and
-pathfinding, geometry, signals and maths, data structures, dynamic programming
-and strings, and simulation. TypeScript, canvas, no runtime dependencies.
+44 interactive algorithm demos: sorting, pathfinding, geometry, Fourier epicycles, fluids. TypeScript and canvas.
 
-Live at <https://varunagarwalofficial.github.io/visual-algorithms/>.
+[Live demo](https://varunagarwalofficial.github.io/visual-algorithms/) · [MIT licence](LICENSE)
+
+TypeScript, canvas, no runtime dependencies.
 
 ![The home page: demos grouped by section, each with a thumbnail](docs/home.png)
 
