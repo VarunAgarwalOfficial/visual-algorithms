@@ -4,7 +4,7 @@
 
 44 interactive algorithm demos: sorting, pathfinding, geometry, Fourier epicycles, fluids. TypeScript and canvas.
 
-[Live demo](https://varunagarwalofficial.github.io/visual-algorithms/) · [MIT licence](LICENSE)
+[Live demo](https://varunswaika.github.io/visual-algorithms/) · [MIT licence](LICENSE)
 
 ![The home page: demos grouped by section, each with a thumbnail](docs/home.png)
 
@@ -231,7 +231,7 @@ and every focusable element shows a focus ring.
 ## Deploying
 
 `.github/workflows/pages.yml` builds `dist/` and publishes it to
-<https://varunagarwalofficial.github.io/visual-algorithms/> on every push to
+<https://varunswaika.github.io/visual-algorithms/> on every push to
 `main`.
 
 ## Credits
@@ -239,8 +239,8 @@ and every focusable element shows a focus ring.
 Grown from a rebuild of three hobby projects written between 2020 and 2022: a sorting
 visualiser (2020), metaballs with marching squares and a Fourier transform
 visualiser (both 2022, Python/Pygame and p5.js; see
-[Marching-Squares-Metaballs](https://github.com/VarunAgarwalOfficial/Marching-Squares-Metaballs) and
-[Fourier-Transform-Visualizer](https://github.com/VarunAgarwalOfficial/Fourier-Transform-Visualizer)). The smiley preset is the test
+[Marching-Squares-Metaballs](https://github.com/varunswaika/Marching-Squares-Metaballs) and
+[Fourier-Transform-Visualizer](https://github.com/varunswaika/Fourier-Transform-Visualizer)). The smiley preset is the test
 drawing from the original Fourier project.
 
 ## Status
