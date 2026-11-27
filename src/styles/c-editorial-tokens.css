@@ -91,7 +91,7 @@
      decoration, and never without the word beside it. */
   --site-mean-proved: #3d6f48;
   --site-mean-measured: #8a6417;
-  --site-mean-open: #6b5592;
+  --site-mean-open: #2f6297;
   --site-mean-against: #9b3f36;
 
   /* Font stacks: text, code, maths. KaTeX brings its own fonts when it is
@@ -177,7 +177,7 @@
 
     --site-mean-proved: #86b58f;
     --site-mean-measured: #cfa75b;
-    --site-mean-open: #b29dd8;
+    --site-mean-open: #8fbbe6;
     --site-mean-against: #df8b80;
   }
 }
