@@ -13,6 +13,18 @@ answer, show it working. Every demo can be played, paused, stepped forwards and
 backwards and slowed down, counts the work it does, and takes input you can
 draw, drag, type or randomise.
 
+## At a glance
+
+- **44 demos in seven sections**, live at the link above, with no runtime
+  dependencies.
+- A demo's settings and input live in the URL, so a link reproduces exactly
+  what is on screen.
+- 107 unit tests over the algorithm code, and a smoke test that loads every
+  demo in a headless browser.
+
+**Stack:** TypeScript and canvas, built with Vite, tested with Vitest, deployed
+to GitHub Pages.
+
 ## The demos
 
 | Section                         | Demos                                                                                                                                                                                                                                                                                |
