@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/banner.png" alt="Pixel art: sunflowers of rising height, two swapping places" width="100%"></p>
+<p align="center"><img src="docs/banner.png" alt="Pixel art: bars mid-sort, with two of them swapping places" width="100%"></p>
 
 # Visual algorithms
 
