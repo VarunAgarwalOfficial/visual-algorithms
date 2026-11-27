@@ -6,8 +6,6 @@
 
 [Live demo](https://varunagarwalofficial.github.io/visual-algorithms/) · [MIT licence](LICENSE)
 
-TypeScript, canvas, no runtime dependencies.
-
 ![The home page: demos grouped by section, each with a thumbnail](docs/home.png)
 
 The idea is the one the first three demos had: do not show an algorithm's
